@@ -3,6 +3,7 @@ from config import settings
 
 
 client= AsyncIOMotorClient(settings.DATABASE_URL)
+
 db=client[settings.DATABASE_NAME]
 
 
