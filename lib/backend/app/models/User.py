@@ -1,7 +1,9 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 from datetime import datetime
-class Location:
+
+
+class Location(BaseModel):
     type : str = "Point"
     coordinates : List[float]
     

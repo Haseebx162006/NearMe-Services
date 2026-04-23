@@ -1,20 +1,18 @@
-from datetime import timedelta
-from fastapi import HTTPException, status
-
 from fastapi import APIRouter
-from ..schema.userSchema import CustomerCreate
-from ..core.access_token import create_token
-router= APIRouter()
+
+from Controllers.AuthController import login as login_controller, signup as signup_controller
+from schema.userSchema import CustomerCreate, LoginRequest
+
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-@router.get("/login")
+@router.post("/login")
+async def login(user: LoginRequest):
 
-def login(user: CustomerCreate):
-    #here i will authenticate the user and then create a token for them
-    
-    
-    
-    try:
-        token = create_token(data=CustomerCreate.dict(), expire=timedelta(minutes=30))
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    return await login_controller(user)
+
+
+@router.post("/signup")
+async def signup(user: CustomerCreate):
+
+    return await signup_controller(user)

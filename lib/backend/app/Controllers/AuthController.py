@@ -1,14 +1,14 @@
 from datetime import timedelta
 from fastapi import HTTPException, status
-from ..schema.userSchema import CustomerCreate
-from ..core.access_token import create_token
-from ..core.security import verify_password, hash_password
-from ..core.database import db
+from schema.userSchema import CustomerCreate, LoginRequest
+from core.access_token import create_token
+from core.security import verify_password, hash_password
+from core.database import db
 
-def login(user):
+async def login(user: LoginRequest):
     #here i will authenticate the user and then create a token for them
     try:
-        User = db.users.find_one({'email': user.email})
+        User = await db.users.find_one({'email': user.email})
         
         # checking if the user exsits in db or not 
         if User is None:
@@ -29,12 +29,12 @@ def login(user):
     
     return {"access_token": token, "token_type": "bearer"}
     
-def signup(user):
+async def signup(user: CustomerCreate):
     
     #here i will create a new user in the database and then create a token for them
     try:
         # checking if the user already exists in db or not
-        User = db.users.find_one({'email': user.email})
+        User = await db.users.find_one({'email': user.email})
         if User is not None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists")
         
@@ -51,16 +51,14 @@ def signup(user):
         
         # now inserting itinot the db
         
-        result = db.users.insert_one(User_dict)
+        result = await db.users.insert_one(User_dict)
         
-        token= create_token(
+        token= await create_token(
             data={"sub": str(result.inserted_id), "role": user.role},
             expire=timedelta(minutes=30))
         
         return {"access_token": token, "token_type": "bearer"}
         
         
-        
-            
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Could not create user")

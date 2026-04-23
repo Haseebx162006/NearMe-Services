@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from ..models.User import Location
+from models.User import Location
 from pydantic import BaseModel, EmailStr
 
 class UserBase(BaseModel):
@@ -13,6 +13,11 @@ class UserBase(BaseModel):
     location: Location
     
 class CustomerCreate(UserBase):
+    password: str
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
     password: str
     
 class UserUpdate(BaseModel):    
