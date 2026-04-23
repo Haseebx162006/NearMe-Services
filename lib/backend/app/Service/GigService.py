@@ -1,41 +1,30 @@
-from ..core.database import db
+from core.database import db
 from bson import ObjectId
 from fastapi import HTTPException, status
-from datetime import datetime
 
 
 class GigService:
     def __init__(self):
         pass
 
-    @staticmethod
-    def _to_object_id(value: str, field_name: str) -> ObjectId:
+    def _to_object_id(self, value: str, field_name: str) -> ObjectId:
         if not ObjectId.is_valid(value):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid {field_name}",
-            )
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {field_name}")
         return ObjectId(value)
 
-    @staticmethod
-    def _serialize_gig(gig: dict) -> dict:
+    def _serialize_gig(self, gig: dict) -> dict:
         serialized = dict(gig)
         serialized["_id"] = str(serialized["_id"])
-        if isinstance(serialized.get("freelancer_id"), ObjectId):
-            serialized["freelancer_id"] = str(serialized["freelancer_id"])
         return serialized
     
     async def create_gig(self, data: dict, freelancer_id: str):
-        freelancer_object_id = self._to_object_id(freelancer_id, "freelancer_id")
-        user = await db.users.find_one({"_id": freelancer_object_id})
+        user = await db.users.find_one({"_id": self._to_object_id(freelancer_id, "freelancer_id")})
         
         if user is None:
             raise HTTPException(status_code=404, detail="User not found")
         
         payload = dict(data)
         payload['freelancer_id'] = freelancer_id
-        payload['created_at'] = payload.get('created_at', datetime.utcnow())
-        payload['updated_at'] = datetime.utcnow()
         
         result = await db.gigs.insert_one(payload)
         return str(result.inserted_id)
@@ -53,14 +42,13 @@ class GigService:
     
     
     async def get_gig_by_id(self, gig_id: str):
-        gig_object_id = self._to_object_id(gig_id, "gig_id")
-        gig = await db.gigs.find_one({"_id": gig_object_id})
+        gig = await db.gigs.find_one({"_id": self._to_object_id(gig_id, "gig_id")})
         if not gig:
             raise HTTPException(status_code=404, detail="Gig not found")
         return self._serialize_gig(gig)
     
     async def get_gigs_by_freelancer(self, freelancer_id: str):
-        gigs = await db.gigs.find({"freelancer_id": freelancer_id}).to_list(length=100)
+        gigs= await db.gigs.find({"freelancer_id": freelancer_id}).to_list(length=100)
         if not gigs:
             raise HTTPException(status_code=404, detail="No gigs found for this freelancer")
         return [self._serialize_gig(gig) for gig in gigs]
@@ -78,12 +66,10 @@ class GigService:
         
         if gig is None:
             raise HTTPException(status_code=404, detail="Gig not found or you don't have permission to update this gig")
-
-        # Avoid changing immutable ownership/id fields through updates.
-        update_data = dict(data)
-        update_data.pop('_id', None)
-        update_data.pop('freelancer_id', None)
-        update_data['updated_at'] = datetime.utcnow()
         
+        update_data = dict(data)
+        update_data.pop("_id", None)
+        update_data.pop("freelancer_id", None)
+
         await db.gigs.update_one({"_id": gig_object_id}, {"$set": update_data})
         return {"message": "Gig updated successfully"}
