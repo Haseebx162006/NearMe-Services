@@ -21,8 +21,10 @@ async def login(user: LoginRequest):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         
         # after verification now creating the token for the user 
-        token =create_token(data={"sub": str(User['_id']), "role": User['role']}, expire=timedelta(minutes=30))
+        token = create_token(data={"sub": str(User['_id']), "role": User['role']}, expire=timedelta(minutes=30))
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
     
@@ -53,12 +55,14 @@ async def signup(user: CustomerCreate):
         
         result = await db.users.insert_one(User_dict)
         
-        token= await create_token(
+        token = create_token(
             data={"sub": str(result.inserted_id), "role": user.role},
             expire=timedelta(minutes=30))
         
         return {"access_token": token, "token_type": "bearer"}
         
         
-    except Exception as e:
+    except HTTPException:
+        raise
+    except Exception:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Could not create user")

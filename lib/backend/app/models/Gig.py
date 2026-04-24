@@ -14,3 +14,4 @@ class Gig(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
     is_active: bool = True
+    

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr , Field
 from typing import Optional, List
 from datetime import datetime
 
@@ -21,7 +21,7 @@ class User(BaseModel):
     
     location: Location
     
-    skills: Optional[List[str]] = []
+    skills: Optional[List[str]] = Field(default_factory=list)
     Wallet: Optional[float] = 0.0
     rating: Optional[float] = 0.0
     
@@ -31,7 +31,8 @@ class User(BaseModel):
     is_active: bool = True
     suspension_remark: Optional[str] = None
     
-    created_at : datetime = datetime.utcnow()
+    created_at : datetime = Field(default_factory=datetime.utcnow)
+    updated_at : Optional[datetime] = None
     
     
     

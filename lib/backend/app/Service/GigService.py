@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 
 class GigService:
     def __init__(self):
-        pass
+        self.db = db
 
     def _to_object_id(self, value: str, field_name: str) -> ObjectId:
         if not ObjectId.is_valid(value):
@@ -18,7 +18,7 @@ class GigService:
         return serialized
     
     async def create_gig(self, data: dict, freelancer_id: str):
-        user = await db.users.find_one({"_id": self._to_object_id(freelancer_id, "freelancer_id")})
+        user = await self.db.users.find_one({"_id": self._to_object_id(freelancer_id, "freelancer_id")})
         
         if user is None:
             raise HTTPException(status_code=404, detail="User not found")
@@ -26,35 +26,35 @@ class GigService:
         payload = dict(data)
         payload['freelancer_id'] = freelancer_id
         
-        result = await db.gigs.insert_one(payload)
+        result = await self.db.gigs.insert_one(payload)
         return str(result.inserted_id)
     
     
     async def delete_gig(self, gig_id: str, freelancer_id: str):
         gig_object_id = self._to_object_id(gig_id, "gig_id")
-        gig = await db.gigs.find_one({"_id": gig_object_id, "freelancer_id": freelancer_id})
+        gig = await self.db.gigs.find_one({"_id": gig_object_id, "freelancer_id": freelancer_id})
         
         if gig is None:
             raise HTTPException(status_code=404, detail="Gig not found or you don't have permission to delete this gig")
         
-        await db.gigs.delete_one({"_id": gig_object_id})
+        await self.db.gigs.delete_one({"_id": gig_object_id})
         return {"message": "Gig deleted successfully"}
     
     
     async def get_gig_by_id(self, gig_id: str):
-        gig = await db.gigs.find_one({"_id": self._to_object_id(gig_id, "gig_id")})
+        gig = await self.db.gigs.find_one({"_id": self._to_object_id(gig_id, "gig_id")})
         if not gig:
             raise HTTPException(status_code=404, detail="Gig not found")
         return self._serialize_gig(gig)
     
     async def get_gigs_by_freelancer(self, freelancer_id: str):
-        gigs= await db.gigs.find({"freelancer_id": freelancer_id}).to_list(length=100)
+        gigs= await self.db.gigs.find({"freelancer_id": freelancer_id}).to_list(length=100)
         if not gigs:
             raise HTTPException(status_code=404, detail="No gigs found for this freelancer")
         return [self._serialize_gig(gig) for gig in gigs]
     
     async def get_all_gigs(self):
-        gigs = await db.gigs.find().to_list(length=100)
+        gigs = await self.db.gigs.find().to_list(length=100)
         if not gigs:
             raise HTTPException(status_code=404, detail="No gigs found")
         return [self._serialize_gig(gig) for gig in gigs]
@@ -62,7 +62,7 @@ class GigService:
     
     async def update_gig(self, gig_id: str, data: dict, freelancer_id: str):
         gig_object_id = self._to_object_id(gig_id, "gig_id")
-        gig = await db.gigs.find_one({"_id": gig_object_id, "freelancer_id": freelancer_id})
+        gig = await self.db.gigs.find_one({"_id": gig_object_id, "freelancer_id": freelancer_id})
         
         if gig is None:
             raise HTTPException(status_code=404, detail="Gig not found or you don't have permission to update this gig")
@@ -71,5 +71,5 @@ class GigService:
         update_data.pop("_id", None)
         update_data.pop("freelancer_id", None)
 
-        await db.gigs.update_one({"_id": gig_object_id}, {"$set": update_data})
+        await self.db.gigs.update_one({"_id": gig_object_id}, {"$set": update_data})
         return {"message": "Gig updated successfully"}
