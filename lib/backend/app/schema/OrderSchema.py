@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal, Optional
 from datetime import datetime, timezone
 
-from ..utils.Pyobject import PyObjectId
-from ..utils.Constants import constant
+from utils.Pyobject import PyObjectId
+from utils.Constants import constant
 
 
 class BaseOrderSchema(BaseModel):

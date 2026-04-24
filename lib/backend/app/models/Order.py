@@ -1,8 +1,8 @@
 from pydantic import BaseModel, Field
 from typing import Literal, Optional
 from datetime import datetime
-from ..utils.Pyobject import PyObjectId
-from ..utils.Constants import constant
+from utils.Pyobject import PyObjectId
+from utils.Constants import constant
 
 
 class Order(BaseModel):
@@ -24,10 +24,14 @@ class Order(BaseModel):
     platform_fee: float = constant.PLATFORM_FEE
 
     payment_status: Literal[
+        "pending",
         "held",
         "released",
         "refunded"
-    ] = "held"
+    ] = "pending"
+
+    stripe_payment_intent_id: Optional[str] = None
+    payment_id: Optional[PyObjectId] = None
 
     requirements: Optional[str] = None
 

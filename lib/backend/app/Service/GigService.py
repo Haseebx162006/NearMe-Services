@@ -3,6 +3,7 @@ from bson import ObjectId
 from fastapi import HTTPException, status
 import heapq
 from typing import List
+from utils.Pyobject import validate_object_id
 
 
 class GigService:
@@ -44,18 +45,13 @@ class GigService:
             
         return ranked_gigs
 
-    def _to_object_id(self, value: str, field_name: str) -> ObjectId:
-        if not ObjectId.is_valid(value):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {field_name}")
-        return ObjectId(value)
-
     def _serialize_gig(self, gig: dict) -> dict:
         serialized = dict(gig)
         serialized["_id"] = str(serialized["_id"])
         return serialized
     
     async def create_gig(self, data: dict, freelancer_id: str):
-        user = await self.db.users.find_one({"_id": self._to_object_id(freelancer_id, "freelancer_id")})
+        user = await self.db.users.find_one({"_id": validate_object_id(freelancer_id)})
         
         if user is None:
             raise HTTPException(status_code=404, detail="User not found")
@@ -68,7 +64,7 @@ class GigService:
     
     
     async def delete_gig(self, gig_id: str, freelancer_id: str):
-        gig_object_id = self._to_object_id(gig_id, "gig_id")
+        gig_object_id = validate_object_id(gig_id)
         gig = await self.db.gigs.find_one({"_id": gig_object_id, "freelancer_id": freelancer_id})
         
         if gig is None:
@@ -79,7 +75,7 @@ class GigService:
     
     
     async def get_gig_by_id(self, gig_id: str):
-        gig = await self.db.gigs.find_one({"_id": self._to_object_id(gig_id, "gig_id")})
+        gig = await self.db.gigs.find_one({"_id": validate_object_id(gig_id)})
         if not gig:
             raise HTTPException(status_code=404, detail="Gig not found")
         return self._serialize_gig(gig)
@@ -98,7 +94,7 @@ class GigService:
     
     
     async def update_gig(self, gig_id: str, data: dict, freelancer_id: str):
-        gig_object_id = self._to_object_id(gig_id, "gig_id")
+        gig_object_id = validate_object_id(gig_id)
         gig = await self.db.gigs.find_one({"_id": gig_object_id, "freelancer_id": freelancer_id})
         
         if gig is None:

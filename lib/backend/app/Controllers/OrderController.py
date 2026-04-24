@@ -1,5 +1,5 @@
-from ..Service.OrderService import OrderService
-from ..core.checker import role_checker
+from Service.OrderService import OrderService
+from core.checker import role_checker
 from fastapi import Depends, HTTPException, status
 
 class OrderController:

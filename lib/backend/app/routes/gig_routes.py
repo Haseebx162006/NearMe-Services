@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 
 from Controllers.GigController import Gigcontroller
 from core.checker import role_checker
-from ..schema.gigSchema import GigSchema
+from schema.gigSchema import GigSchema
 
 router = APIRouter(prefix="/gigs", tags=["Gigs"])
 controller = Gigcontroller()
@@ -37,6 +37,6 @@ async def update_gig(gig_id: str, data: GigSchema, current_user: dict = Depends(
     return await controller.update_gig(gig_id, data.dict(), str(current_user["_id"]))
 
 
-@router.delete("/{gig_id}")
-async def delete_gig(gig_id: str, current_user: dict = Depends(role_checker("freelancer"))):
+@router.delete("/{gig_id}",)
+async def delete_gig(gig_id: str, current_user: dict = Depends(role_checker(["freelancer", "admin"]))):
     return await controller.delete_gig(gig_id, str(current_user["_id"]))

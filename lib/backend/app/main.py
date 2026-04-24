@@ -2,12 +2,16 @@ from fastapi import FastAPI
 from routes.auth_routes import router as auth_router
 from routes.gig_routes import router as gig_router
 from routes.order_routes import router as order_router
+from routes.admin_routes import router as admin_router
+from routes.payment_routes import router as payment_router
 
 app = FastAPI()
 
 app.include_router(auth_router)
 app.include_router(gig_router)
 app.include_router(order_router)
+app.include_router(admin_router)
+app.include_router(payment_router)
 
 
 @app.get('/')

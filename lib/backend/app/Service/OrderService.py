@@ -1,16 +1,12 @@
-from ..schema.OrderSchema import CreateOrderSchema
+from schema.OrderSchema import CreateOrderSchema
 from fastapi import HTTPException, status
-from ..core.database import db
+from core.database import db
 from bson import ObjectId
+from utils.Pyobject import validate_object_id
 
 class OrderService:
     def __init__(self):
         self.db = db
-
-    def _to_object_id(self, value: str, field_name: str) -> ObjectId:
-        if not ObjectId.is_valid(value):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {field_name}")
-        return ObjectId(value)
 
     def _serialize_order(self, order: dict) -> dict:
         serialized = dict(order )
@@ -32,7 +28,7 @@ class OrderService:
     async def get_order_by_id(self, order_id: str):
         # Logic to retrieve an order by its ID from the database
         
-        order = await self.db.orders.find_one({"_id": self._to_object_id(order_id, "order_id")})
+        order = await self.db.orders.find_one({"_id": validate_object_id(order_id)})
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
         return self._serialize_order(order)
@@ -49,7 +45,7 @@ class OrderService:
     async def delete_order(self, order_id: str):
         # Logic to delete an order by its ID from the database
         
-        order_object_id = self._to_object_id(order_id, "order_id")
+        order_object_id = validate_object_id(order_id)
         order = await self.db.orders.find_one({"_id": order_object_id})
         
         if order is None:
@@ -61,7 +57,7 @@ class OrderService:
     async def update_order(self, order_id: str, order_data: dict):
         # Logic to update an order by its ID in the database
         
-        order_object_id = self._to_object_id(order_id, "order_id")
+        order_object_id = validate_object_id(order_id)
         order = await self.db.orders.find_one({"_id": order_object_id})
         
         if order is None:

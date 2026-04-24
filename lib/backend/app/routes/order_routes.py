@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from ..Controllers.OrderController import OrderController
-from ..schema.OrderSchema import CreateOrderSchema
-from ..core.checker import role_checker
+from Controllers.OrderController import OrderController
+from schema.OrderSchema import CreateOrderSchema
+from core.checker import role_checker
 
 router = APIRouter(
     prefix="/orders",
