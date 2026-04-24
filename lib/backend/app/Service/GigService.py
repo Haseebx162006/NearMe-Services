@@ -1,11 +1,48 @@
 from core.database import db
 from bson import ObjectId
 from fastapi import HTTPException, status
+import heapq
+from typing import List
 
 
 class GigService:
     def __init__(self):
         self.db = db
+
+    def get_ranked_gigs(self, gigs: List[dict], sort_by: str, limit: int) -> List[dict]:
+        """
+        Ranks and sorts gigs in-memory using a Heap (Priority Queue).
+        - rating: Max Heap (using negative values)
+        - price: Min Heap
+        - distance: Min Heap
+        """
+        heap = []
+        
+        for gig in gigs:
+            
+            if sort_by == "rating":
+                
+                key = -gig.get("rating", 0.0)
+            elif sort_by == "price":
+                
+                key = gig.get("price", float('inf'))
+            elif sort_by == "distance":
+               
+                key = gig.get("distance", float('inf'))
+            else:
+                
+                key = -gig.get("rating", 0.0)
+            
+            
+            heapq.heappush(heap, (key, id(gig), gig))
+
+        ranked_gigs = []
+        # Extract top-K using heappop
+        for _ in range(min(limit, len(heap))):
+            _, _, gig = heapq.heappop(heap)
+            ranked_gigs.append(gig)
+            
+        return ranked_gigs
 
     def _to_object_id(self, value: str, field_name: str) -> ObjectId:
         if not ObjectId.is_valid(value):

@@ -1,7 +1,17 @@
 from ..schema.OrderSchema import CreateOrderSchema
-from fastapi import HTTPException,status
+from fastapi import HTTPException, status
+from ..core.database import db
+from bson import ObjectId
 
 class OrderService:
+    def __init__(self):
+        self.db = db
+
+    def _to_object_id(self, value: str, field_name: str) -> ObjectId:
+        if not ObjectId.is_valid(value):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {field_name}")
+        return ObjectId(value)
+
     def _serialize_order(self, order: dict) -> dict:
         serialized = dict(order )
         serialized["_id"] = str(serialized["_id"])

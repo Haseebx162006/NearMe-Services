@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from Controllers.GigController import Gigcontroller
 from core.checker import role_checker
@@ -15,8 +15,11 @@ async def create_gig(data: GigSchema, current_user: dict = Depends(role_checker(
 
 
 @router.get("/")
-async def get_all_gigs():
-    return await controller.get_all_gigs()
+async def get_all_gigs(
+    sort_by: str = Query("rating", enum=["rating", "price", "distance"]),
+    limit: int = Query(10, gt=0, le=100)
+):
+    return await controller.get_all_gigs(sort_by=sort_by, limit=limit)
 
 
 @router.get("/my")
