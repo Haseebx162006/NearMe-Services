@@ -1,8 +1,7 @@
 import stripe
 from core.config import settings
 from core.database import db
-from bson import ObjectId
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from datetime import datetime
 from utils.Constants import constant
 from utils.Pyobject import validate_object_id
@@ -39,21 +38,27 @@ class PaymentService:
         """Step 2: Handle stripe-side success and update DB"""
         try:
             event = stripe.Webhook.construct_event(
-                payload,sig_header, settings.STRIPE_WEBHOOK_SECRET
+                payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
             )
-        except stripe.error.SignatureVerificationError as e:
-                raise HTTPException(status_code=400, detail="Invalid signature")
-            
-        if (event['type']== 'payment_intent.succeeded'):
-            intent = event['data']['object']
-            order_id = intent['metadata']['orderId']
-            amount = intent['amount'] / 100.0  # Convert back to dollars
-            
-        if order_id and amount:
-            await self._process_successful_payment(order_id, intent['id'], amount)
-            
-            return {"message": "Payment processed successfully"}
-        
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid payload")
+        except stripe.error.SignatureVerificationError:
+            raise HTTPException(status_code=400, detail="Invalid signature")
+
+        if event.get("type") != "payment_intent.succeeded":
+            return {"message": "Event ignored"}
+
+        intent = event["data"]["object"]
+        order_id = intent.get("metadata", {}).get("orderId")
+        amount_in_cents = intent.get("amount")
+
+        if not order_id or amount_in_cents is None:
+            raise HTTPException(status_code=400, detail="Missing payment metadata")
+
+        amount = amount_in_cents / 100.0  # Convert back to dollars
+        await self._process_successful_payment(order_id, intent["id"], amount)
+
+        return {"message": "Payment processed successfully"}
         
         
         
@@ -62,7 +67,7 @@ class PaymentService:
         order = await self.db.orders.find_one({"_id": order_id})
         
         if order:
-            # Create Payment Record
+            
             platform_fee = constant.PLATFORM_FEE
             freelancer_payout = amount - platform_fee
             
@@ -125,26 +130,6 @@ class PaymentService:
         )
         
         # 5. Mark order as released
-        await self.db.orders.update_one(
-            {"_id": order_id},
-            {"$set": {"payment_status": "released"}}
-        )
-        
-        return {"message": "Payment released to freelancer wallet"}
-
-        
-        await self.db.users.update_one(
-            {"_id": freelancer_id},
-            {"$inc": {"walletBalance": payout_amount}}
-        )
-        
-        # 3. Mark payment as released
-        await self.db.payments.update_one(
-            {"_id": payment["_id"]},
-            {"$set": {"status": "released", "released_at": datetime.utcnow()}}
-        )
-        
-        # 4. Mark order as released
         await self.db.orders.update_one(
             {"_id": order_id},
             {"$set": {"payment_status": "released"}}
