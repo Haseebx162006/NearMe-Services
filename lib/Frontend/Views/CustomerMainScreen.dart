@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../Theme/app_colors.dart';
-import '../Components/social_button.dart';
 
 class CustomerMainScreen extends StatefulWidget {
   const CustomerMainScreen({super.key});
