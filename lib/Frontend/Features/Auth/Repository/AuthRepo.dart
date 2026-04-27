@@ -1,19 +1,21 @@
 import 'package:dio/dio.dart';
-import '../../Model/UserModel.dart';
-import '../../../core/Network/dioClient.dart';
-import '../../../core/storage/secure_storage.dart';
+import '../Model/UserModel.dart';
+import '../../../../core/Network/dioClient.dart';
+import '../../../../core/storage/secure_storage.dart';
 
 class AuthRepository {
   final _secureStorage = SecureStorage();
   final _dio = Dioclient.dio;
 
-
   Future<String?> login(String email, String password) async {
     try {
-      final response = await _dio.post('/auth/login', data:{
-        'email': email,
-        'password': password, // Ensure this matches the backend field name (passwrd vs password)
-      },
+      final response = await _dio.post(
+        '/auth/login',
+        data: {
+          'email': email,
+          'password':
+              password, // Ensure this matches the backend field name (passwrd vs password)
+        },
       );
 
       if (response.statusCode == 200) {
@@ -33,7 +35,6 @@ class AuthRepository {
       throw Exception("An unexpected error occurred: $e");
     }
   }
-
 
   Future<String?> signup(UserModel user) async {
     try {
@@ -64,7 +65,6 @@ class AuthRepository {
     await _secureStorage.deleteToken();
   }
 
-  /// Checks if a user is currently logged in.
   Future<bool> isLoggedIn() async {
     final token = await _secureStorage.getToken();
     return token != null && token.isNotEmpty;

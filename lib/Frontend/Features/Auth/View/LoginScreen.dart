@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'SignupScreen.dart';
-import '../Theme/app_colors.dart';
-import '../Components/custom_textfield.dart';
-import '../Components/social_button.dart';
-import '../Components/custom_button.dart';
+import '../../../Theme/app_colors.dart';
+import '../../../Components/custom_textfield.dart';
+import '../../../Components/social_button.dart';
+import '../../../Components/custom_button.dart';
 
 class Loginscreen extends StatefulWidget {
   const Loginscreen({super.key});
