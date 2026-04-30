@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from schema.userSchema import CustomerCreate, LoginRequest
 from core.access_token import create_token
@@ -16,7 +16,12 @@ async def login(user: LoginRequest):
         
         
         # Now checking here the password of the user is correct or not
-        user_password = verify_password(user.password, User['password'])
+        # The password is stored as 'passwrd' in the database
+        stored_password = User.get('passwrd') or User.get('password')
+        if not stored_password:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        
+        user_password = verify_password(user.password, stored_password)
         if not user_password:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         
@@ -36,8 +41,8 @@ async def signup(user: CustomerCreate):
     #here i will create a new user in the database and then create a token for them
     try:
         # checking if the user already exists in db or not
-        User = await db.users.find_one({'email': user.email})
-        if User is not None:
+        User_exists = await db.users.find_one({'email': user.email})
+        if User_exists is not None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists")
         
         
@@ -45,14 +50,21 @@ async def signup(user: CustomerCreate):
         hashed_password = hash_password(user.password)
         
         
-        # here i am converting the data into to the dictionary so that it can be stored in a database 
-        User_dict= user.dict()
+        # Convert Pydantic model to dict (model_dump is the Pydantic v2 way)
+        # exclude_none=True removes any None fields (like location) so they
+        # don't get inserted into MongoDB and break the 2dsphere index
+        User_dict = user.model_dump(exclude_none=True)
         
-        User_dict['password'] = hashed_password
+        # Pydantic schema uses 'password', but Database model uses 'passwrd'
+        User_dict['passwrd'] = hashed_password
+        if 'password' in User_dict:
+            del User_dict['password']
         
+        # Add default timestamps (using timezone-aware UTC)
+        User_dict['created_at'] = datetime.now(timezone.utc)
+        User_dict['is_active'] = True
         
-        # now inserting itinot the db
-        
+        # now inserting into the db
         result = await db.users.insert_one(User_dict)
         
         token = create_token(
@@ -64,5 +76,6 @@ async def signup(user: CustomerCreate):
         
     except HTTPException:
         raise
-    except Exception:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Could not create user")
+    except Exception as e:
+        print(f"Signup Error: {e}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Could not create user: {str(e)}")

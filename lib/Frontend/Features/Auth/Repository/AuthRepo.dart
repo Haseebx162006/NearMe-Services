@@ -38,8 +38,23 @@ class AuthRepository {
 
   Future<String?> signup(UserModel user) async {
     try {
-      // We use user.toJson() but ensure the field names match the backend (passwrd vs password)
-      final userData = user.toJson();
+      // Map Dart UserModel fields to match backend schema's exact field names
+      final Map<String, dynamic> userData = {
+        'name': user.name,
+        'email': user.email,
+        'phone_number': user.phoneNumber,
+        'role': user.role,
+        'password': user.password,
+      };
+
+      // Only include location if the user actually set real coordinates
+      // Don't send the placeholder [0.0, 0.0] — it can break MongoDB's 2dsphere index
+      if (user.location != null &&
+          user.location!.coordinates.isNotEmpty &&
+          !(user.location!.coordinates[0] == 0.0 &&
+              user.location!.coordinates[1] == 0.0)) {
+        userData['location'] = user.location!.toJson();
+      }
 
       final response = await _dio.post('/auth/signup', data: userData);
 
@@ -52,8 +67,17 @@ class AuthRepository {
       }
       return null;
     } on DioException catch (e) {
-      final errorMessage =
-          e.response?.data['detail'] ?? "Signup failed. Please try again.";
+      // Extract the actual error message from the backend response
+      String errorMessage = "Signup failed. Please try again.";
+      if (e.response?.data != null) {
+        final data = e.response!.data;
+        if (data is Map && data.containsKey('detail')) {
+          errorMessage = data['detail'].toString();
+        }
+      } else if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        errorMessage = "Cannot connect to server. Is the backend running?";
+      }
       throw Exception(errorMessage);
     } catch (e) {
       throw Exception("An unexpected error occurred: $e");

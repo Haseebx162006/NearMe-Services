@@ -44,4 +44,10 @@ class Authviewmodel extends AsyncNotifier<String?> {
       return null;
     });
   }
+
+  /// Resets the state back to initial (no error, no loading).
+  /// Call this when the user wants to try again after a failed signup/login.
+  void resetState() {
+    state = const AsyncData(null);
+  }
 }

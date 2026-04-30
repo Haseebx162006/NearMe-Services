@@ -10,7 +10,7 @@ controller = Gigcontroller()
 
 @router.post("/")
 async def create_gig(data: GigSchema, current_user: dict = Depends(role_checker("freelancer"))):
-    gig_id = await controller.create_gig(data.dict(), str(current_user["_id"]))
+    gig_id = await controller.create_gig(data.model_dump(), str(current_user["_id"]))
     return {"gig_id": gig_id}
 
 
@@ -34,7 +34,7 @@ async def get_gig_by_id(gig_id: str):
 
 @router.put("/{gig_id}")
 async def update_gig(gig_id: str, data: GigSchema, current_user: dict = Depends(role_checker("freelancer"))):
-    return await controller.update_gig(gig_id, data.dict(), str(current_user["_id"]))
+    return await controller.update_gig(gig_id, data.model_dump(), str(current_user["_id"]))
 
 
 @router.delete("/{gig_id}",)

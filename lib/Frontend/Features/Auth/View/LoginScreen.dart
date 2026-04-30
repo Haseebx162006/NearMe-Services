@@ -1,25 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
 import 'SignupScreen.dart';
 import '../../../Theme/app_colors.dart';
 import '../../../Components/custom_textfield.dart';
 import '../../../Components/social_button.dart';
 import '../../../Components/custom_button.dart';
 
-class Loginscreen extends StatefulWidget {
+class Loginscreen extends ConsumerStatefulWidget {
   const Loginscreen({super.key});
 
   @override
-  State<Loginscreen> createState() => _LoginscreenState();
+  ConsumerState<Loginscreen> createState() => _LoginscreenState();
 }
 
-class _LoginscreenState extends State<Loginscreen> {
+class _LoginscreenState extends ConsumerState<Loginscreen> {
   bool _rememberMe = false;
+
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authprovider);
+
+    ref.listen(authprovider, (prev, next) {
+      next.whenData((token) {
+        if (token != null) {
+          Navigator.pushReplacementNamed(context, '/home');
+        }
+      });
+
+      if (next is AsyncError) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next.error.toString())));
+      }
+    });
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF9F6), // Warm off-white background
+      backgroundColor: const Color(0xFFFBF9F6),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -27,16 +56,21 @@ class _LoginscreenState extends State<Loginscreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 40),
-              // Logo and Header
+
+              // Logo
               Row(
                 children: [
-                   Container(
+                  Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: const Color(0xFF8B5E3C).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.shield, color: Color(0xFF8B5E3C), size: 28),
+                    child: const Icon(
+                      Icons.shield,
+                      color: Color(0xFF8B5E3C),
+                      size: 28,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   const Column(
@@ -63,7 +97,9 @@ class _LoginscreenState extends State<Loginscreen> {
                   ),
                 ],
               ),
+
               const SizedBox(height: 48),
+
               const Text(
                 'Welcome back',
                 style: TextStyle(
@@ -73,7 +109,9 @@ class _LoginscreenState extends State<Loginscreen> {
                   color: Color(0xFF3E2723),
                 ),
               ),
+
               const SizedBox(height: 8),
+
               const Text(
                 'Sign in to continue to NearMe Services',
                 style: TextStyle(
@@ -82,41 +120,50 @@ class _LoginscreenState extends State<Loginscreen> {
                   color: AppColors.textSecondary,
                 ),
               ),
+
               const SizedBox(height: 40),
 
-              // Form Fields
-              const CustomTextField(
+              // EMAIL
+              CustomTextField(
+                controller: emailController,
                 label: 'Email',
                 hintText: 'your@email.com',
                 prefixIcon: Icons.email_outlined,
               ),
+
               const SizedBox(height: 20),
-              const CustomTextField(
+
+              // PASSWORD
+              CustomTextField(
+                controller: passwordController,
                 label: 'Password',
                 hintText: '••••••••',
                 prefixIcon: Icons.lock_outline,
                 isPassword: true,
-                suffixIcon: Icon(Icons.visibility_outlined, color: AppColors.textSecondary, size: 20),
+                suffixIcon: const Icon(
+                  Icons.visibility_outlined,
+                  color: AppColors.textSecondary,
+                  size: 20,
+                ),
               ),
+
               const SizedBox(height: 20),
 
-              // Remember Me & Forgot Password
+              // Remember me
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: Checkbox(
-                          value: _rememberMe,
-                          onChanged: (val) => setState(() => _rememberMe = val ?? false),
-                          activeColor: const Color(0xFF4E342E),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        ),
+                      Checkbox(
+                        value: _rememberMe,
+                        onChanged: (val) {
+                          setState(() {
+                            _rememberMe = val ?? false;
+                          });
+                        },
+                        activeColor: const Color(0xFF4E342E),
                       ),
-                      const SizedBox(width: 8),
                       const Text(
                         'Remember me',
                         style: TextStyle(
@@ -135,19 +182,53 @@ class _LoginscreenState extends State<Loginscreen> {
                         fontFamily: 'Poppins',
                         fontSize: 13,
                         color: Color(0xFFBCA073),
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                 ],
               ),
+
               const SizedBox(height: 32),
 
-              // Sign In Button
-              CustomPrimaryButton(
-                label: 'Sign In',
-                onPressed: () {},
+              authState.when(
+                data: (token) {
+                  return CustomPrimaryButton(
+                    label: 'Sign In',
+                    onPressed: () {
+                      ref
+                          .read(authprovider.notifier)
+                          .login(
+                            emailController.text.trim(),
+                            passwordController.text.trim(),
+                          );
+                    },
+                  );
+                },
+
+                loading: () => const Center(child: CircularProgressIndicator()),
+
+                error: (e, _) => Column(
+                  children: [
+                    Text(
+                      e.toString(),
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    const SizedBox(height: 10),
+                    CustomPrimaryButton(
+                      label: 'Retry',
+                      onPressed: () {
+                        ref
+                            .read(authprovider.notifier)
+                            .login(
+                              emailController.text.trim(),
+                              passwordController.text.trim(),
+                            );
+                      },
+                    ),
+                  ],
+                ),
               ),
+
               const SizedBox(height: 40),
 
               // Divider
@@ -158,41 +239,54 @@ class _LoginscreenState extends State<Loginscreen> {
                     padding: EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       'or continue with',
-                      style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.textHint),
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                        color: AppColors.textHint,
+                      ),
                     ),
                   ),
                   Expanded(child: Divider(color: AppColors.border)),
                 ],
               ),
+
               const SizedBox(height: 32),
 
-              // Social Buttons
               const Row(
                 children: [
                   SocialButton(
-                      iconPath: 'lib/Assets/google_logo.png', label: 'Google'),
+                    iconPath: 'lib/Assets/google_logo.png',
+                    label: 'Google',
+                  ),
                 ],
               ),
+
               const SizedBox(height: 48),
 
-              // Signup Link
+              // Signup
               Center(
                 child: Text.rich(
                   TextSpan(
                     text: "Don't have an account? ",
-                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: AppColors.textSecondary),
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                    ),
                     children: [
                       TextSpan(
                         text: 'Sign up',
                         style: const TextStyle(
-                            color: Color(0xFFBCA073),
-                            fontWeight: FontWeight.w600),
+                          color: Color(0xFFBCA073),
+                          fontWeight: FontWeight.w600,
+                        ),
                         recognizer: TapGestureRecognizer()
                           ..onTap = () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                  builder: (context) => const Signupscreen()),
+                                builder: (context) => const Signupscreen(),
+                              ),
                             );
                           },
                       ),
@@ -200,6 +294,7 @@ class _LoginscreenState extends State<Loginscreen> {
                   ),
                 ),
               ),
+
               const SizedBox(height: 40),
             ],
           ),

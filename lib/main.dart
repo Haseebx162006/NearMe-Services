@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:near_me/Frontend/Features/Auth/View/SignupScreen.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Flutter Demo', home: Signupscreen());
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'NearMe',
+      home: const Signupscreen(),
+    );
   }
 }

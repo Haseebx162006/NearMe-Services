@@ -2,7 +2,7 @@ import stripe
 from core.config import settings
 from core.database import db
 from fastapi import HTTPException
-from datetime import datetime
+from datetime import datetime, timezone
 from utils.Constants import constant
 from utils.Pyobject import validate_object_id
 
@@ -80,7 +80,7 @@ class PaymentService:
                 "platform_fee": platform_fee,
                 "freelancer_payout": freelancer_payout,
                 "status": "held",
-                "created_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc)
             }
             
             result = await self.db.payments.insert_one(payment_record)
@@ -120,13 +120,13 @@ class PaymentService:
         
         await self.db.users.update_one(
             {"_id": freelancer_id},
-            {"$inc": {"walletBalance": payout_amount}}
+            {"$inc": {"Wallet": payout_amount}}
         )
         
         # 4. Mark payment as released
         await self.db.payments.update_one(
             {"_id": payment_id},
-            {"$set": {"status": "released", "released_at": datetime.utcnow()}}
+            {"$set": {"status": "released", "released_at": datetime.now(timezone.utc)}}
         )
         
         # 5. Mark order as released

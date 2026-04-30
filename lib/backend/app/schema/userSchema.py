@@ -10,10 +10,15 @@ class UserBase(BaseModel):
     role: str
     profile_picture: Optional[str] = None
     profile_bio: Optional[str] = None
-    location: Location
+    location: Optional[Location] = None
     
-class CustomerCreate(UserBase):
+class CustomerCreate(BaseModel):
+    name: str
+    email: EmailStr
+    phone_number: str
+    role: str
     password: str
+    location: Optional[Location] = None
 
 
 class LoginRequest(BaseModel):

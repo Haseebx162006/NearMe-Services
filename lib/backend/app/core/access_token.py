@@ -1,5 +1,5 @@
 from datetime import timedelta
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List 
 from jose import jwt, JWTError
 from bson import ObjectId
@@ -20,9 +20,9 @@ def create_token(data: dict, expire:timedelta):
         to_enocode = data.copy()
         
         if expire:
-            exp= expire + datetime.utcnow()
+            exp= expire + datetime.now(timezone.utc)
         else:
-            exp= timedelta(minutes=30)+ datetime.utcnow()
+            exp= timedelta(minutes=30)+ datetime.now(timezone.utc)
             
         
         to_enocode.update({'exp': exp})

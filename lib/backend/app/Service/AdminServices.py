@@ -11,6 +11,7 @@ class AdminService:
         serialized = dict(user)
         serialized["_id"] = str(serialized["_id"])
         serialized.pop("password", None)  # Safety: never send passwords
+        serialized.pop("passwrd", None)   # the actual DB field name
         return serialized
     
     async def get_all_users(self):

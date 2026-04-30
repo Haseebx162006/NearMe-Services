@@ -14,7 +14,7 @@ controller = OrderController()
 async def create_order(order_data: CreateOrderSchema, current_user: dict = Depends(role_checker(["customer", "freelancer"]))):
     # Depending on your business logic, you might want to ensure the customer_id in order_data 
     # matches the current_user["_id"] or let the controller handle it.
-    return await controller.create_order(order_data.dict())
+    return await controller.create_order(order_data.model_dump())
 
 @router.get("/{order_id}")
 async def get_order_by_id(order_id: str, current_user: dict = Depends(role_checker(["customer", "freelancer"]))):

@@ -54,21 +54,23 @@ USER_INDEXES = [
    IndexModel(
        [("location", GEOSPHERE)],
        name="idx_users_location_2dsphere",
-       # Skip malformed legacy location docs while building geo index.
-       partialExpression={
-           "location":{
-               "$type":"Point",
-               'location.coordinates.0':{"$type":"number"},
-               'location.coordinates.1':{"$type":"number"}
-           }
-       }
+       # Note: partial_filter_expression is NOT supported for 2dsphere indexes.
+       # We rely on application-level validation to ensure GeoJSON correctness.
    ),
    IndexModel([("role", 1), ("is_active", 1)], name="idx_users_role_active")
 ]
 
 
 async def ensure_user_indexes(database: AsyncIOMotorDatabase) -> None:
-    await database.users.create_indexes(USER_INDEXES)
+    try:
+        await database.users.create_indexes(USER_INDEXES)
+    except Exception as e:
+        # If there's a conflict, drop the old index and recreate it
+        if "IndexKeySpecsConflict" in str(e) or "already exists with different options" in str(e):
+            await database.users.drop_index("idx_users_location_2dsphere")
+            await database.users.create_indexes(USER_INDEXES)
+        else:
+            raise e
     
     
     
