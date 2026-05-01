@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from Controllers.AuthController import login as login_controller, signup as signup_controller, getname as getname_controller
+from Controllers.AuthController import login as login_controller, signup as signup_controller, getname as getname_controller, get_me as get_me_controller
 from core.access_token import get_current_user
 from schema.userSchema import CustomerCreate, LoginRequest
 
@@ -21,3 +21,7 @@ async def signup(user: CustomerCreate):
 @router.get("/getname")
 async def getname(user = Depends(get_current_user)):
     return await getname_controller(user)
+
+@router.get("/me")
+async def get_me(user = Depends(get_current_user)):
+    return await get_me_controller(user)

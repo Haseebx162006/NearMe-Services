@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
-import '../Theme/app_colors.dart';
+import '../../../Theme/app_colors.dart';
 
 class CustomerOrderHistoryScreen extends StatefulWidget {
   const CustomerOrderHistoryScreen({super.key});
 
   @override
-  State<CustomerOrderHistoryScreen> createState() => _CustomerOrderHistoryScreenState();
+  State<CustomerOrderHistoryScreen> createState() =>
+      _CustomerOrderHistoryScreenState();
 }
 
-class _CustomerOrderHistoryScreenState extends State<CustomerOrderHistoryScreen> {
+class _CustomerOrderHistoryScreenState
+    extends State<CustomerOrderHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,13 +34,29 @@ class _CustomerOrderHistoryScreenState extends State<CustomerOrderHistoryScreen>
         type: BottomNavigationBarType.fixed,
         selectedItemColor: const Color(0xFF4E342E),
         unselectedItemColor: Colors.grey,
-        selectedLabelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12),
-        unselectedLabelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12),
+        selectedLabelStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 12,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 12,
+        ),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Messages'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), activeIcon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Messages',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            activeIcon: Icon(Icons.person),
+            label: 'Profile',
+          ),
         ],
       ),
       body: ListView(
@@ -136,7 +154,10 @@ class _CustomerOrderHistoryScreenState extends State<CustomerOrderHistoryScreen>
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),

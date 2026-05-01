@@ -257,7 +257,7 @@ class AdminOrdersPaymentsScreen extends StatelessWidget {
                Text(date, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.grey)),
             ],
           ),
-          if (disputeBox != null) disputeBox,
+          ?disputeBox,
           if (actionButton != null) ...[
             const SizedBox(height: 15),
             SizedBox(width: double.infinity, child: actionButton),

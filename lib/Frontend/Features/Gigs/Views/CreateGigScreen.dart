@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../Components/custom_textfield.dart';
-import '../Components/custom_button.dart';
+import '../../../Components/custom_textfield.dart';
+import '../../../Components/custom_button.dart';
 
 class CreateGigScreen extends StatelessWidget {
   const CreateGigScreen({super.key});

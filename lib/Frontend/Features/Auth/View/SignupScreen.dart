@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:near_me/Frontend/Features/Auth/Model/UserModel.dart';
 import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
+import 'package:near_me/Frontend/Views/CustomerMainScreen.dart';
 import 'LoginScreen.dart';
 import '../../../Theme/app_colors.dart';
 import '../../../Components/custom_textfield.dart';
@@ -39,10 +40,15 @@ class _SignupscreenState extends ConsumerState<Signupscreen> {
     final authState = ref.watch(authprovider);
 
     ref.listen(authprovider, (prev, next) {
-      next.whenData((token) {
-        if (token != null) {
-          // Navigate to home after successful signup
-          Navigator.pushReplacementNamed(context, '/home');
+      next.whenData((user) {
+        if (user != null) {
+          // Navigate to home after successful signup based on role or fallback to customer main screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CustomerMainScreen(),
+            ), // Or a role-based router
+          );
         }
       });
 

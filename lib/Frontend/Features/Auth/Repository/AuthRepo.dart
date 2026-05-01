@@ -115,4 +115,24 @@ class AuthRepository {
       throw Exception("Failed to fetch name: $e");
     }
   }
+
+  Future<UserModel?> getUserData() async {
+    try {
+      final token = await _secureStorage.getToken();
+      if (token == null) return null;
+
+      final response = await _dio.get(
+        '/auth/me', // Corrected to common /me endpoint for user details
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        return UserModel.fromJson(response.data);
+      }
+      return null;
+    } catch (e) {
+      print("Error fetching user data: \$e");
+      throw Exception("Error fetching user profile data.");
+    }
+  }
 }

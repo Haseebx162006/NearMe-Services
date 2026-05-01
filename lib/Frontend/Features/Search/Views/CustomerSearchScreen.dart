@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../Theme/app_colors.dart';
+import '../../../Theme/app_colors.dart';
 
 class CustomerSearchScreen extends StatefulWidget {
   const CustomerSearchScreen({super.key});
@@ -15,39 +15,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF9F6),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 1, // Search tab
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF4E342E),
-        unselectedItemColor: Colors.grey,
-        selectedLabelStyle: const TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 12,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 12,
-        ),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            activeIcon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Messages',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
-      ),
+      // bottomNavigationBar removed for IndexedStack integration
       body: Stack(
         children: [
           // 1. Map Mockup (Using a CustomPainter or Grid container to simulate the map in your image)

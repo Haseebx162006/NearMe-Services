@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../Theme/app_colors.dart';
+import '../../../Theme/app_colors.dart';
 
 class CustomerInboxScreen extends StatefulWidget {
   const CustomerInboxScreen({super.key});
@@ -13,36 +13,7 @@ class _CustomerInboxScreenState extends State<CustomerInboxScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF9F6),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2, // Messages tab
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF4E342E),
-        unselectedItemColor: Colors.grey,
-        selectedLabelStyle: const TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 12,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 12,
-        ),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble),
-            activeIcon: Icon(Icons.chat_bubble),
-            label: 'Messages',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
-      ),
+      // bottomNavigationBar removed for IndexedStack integration
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

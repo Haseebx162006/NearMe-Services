@@ -35,9 +35,9 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
     final authState = ref.watch(authprovider);
 
     ref.listen(authprovider, (prev, next) {
-      next.whenData((token) {
-        if (token != null) {
-          Navigator.push(
+      next.whenData((user) {
+        if (user != null) {
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => CustomerMainScreen()),
           );

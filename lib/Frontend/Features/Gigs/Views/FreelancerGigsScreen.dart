@@ -1,10 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:near_me/Frontend/Features/Gigs/viewModel/viewModel.dart';
 
-class FreelancerGigsScreen extends StatelessWidget {
+class FreelancerGigsScreen extends ConsumerStatefulWidget {
   const FreelancerGigsScreen({super.key});
 
   @override
+  ConsumerState<FreelancerGigsScreen> createState() =>
+      _FreelancerGigsScreenState();
+}
+
+class _FreelancerGigsScreenState extends ConsumerState<FreelancerGigsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(gigprovider.notifier).getMyGigs());
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final gigsAsyncValue = ref.watch(gigprovider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8F6),
       body: SafeArea(
@@ -29,12 +45,22 @@ class FreelancerGigsScreen extends StatelessWidget {
                           color: Color(0xFF3E2723),
                         ),
                       ),
-                      const Text(
-                        '4 of 5 gigs',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 14,
-                          color: Colors.grey,
+                      gigsAsyncValue.when(
+                        data: (gigs) => Text(
+                          '${gigs.length} gigs',
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        loading: () => const Text(
+                          'Loading...',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        error: (_, _) => const Text(
+                          'Error',
+                          style: TextStyle(color: Colors.grey),
                         ),
                       ),
                     ],
@@ -55,47 +81,51 @@ class FreelancerGigsScreen extends StatelessWidget {
 
             // Gigs List
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  _buildGigCard(
-                    title: 'Professional House Cleaning',
-                    price: '\$45',
-                    status: 'Active',
-                    views: '1240',
-                    orders: '124',
-                    statusBackgroundColor: const Color(0xFFE8F5E9),
-                    statusTextColor: Colors.green,
+              child: gigsAsyncValue.when(
+                data: (gigs) {
+                  if (gigs.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No gigs found.',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: Colors.grey,
+                        ),
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: gigs.length,
+                    itemBuilder: (context, index) {
+                      final gig = gigs[index];
+                      // Just some dummy logic for colors based on active status
+                      final statusText = gig.isActive ? 'Active' : 'Inactive';
+                      final bg = gig.isActive
+                          ? const Color(0xFFE8F5E9)
+                          : const Color(0xFFFFEBEE);
+                      final txtColor = gig.isActive ? Colors.green : Colors.red;
+
+                      return _buildGigCard(
+                        title: gig.title,
+                        price: '\$${gig.price}',
+                        status: statusText,
+                        views: '-',
+                        orders: '-',
+                        statusBackgroundColor: bg,
+                        statusTextColor: txtColor,
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => Center(
+                  child: Text(
+                    'Error loading gigs\n$err',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
                   ),
-                  _buildGigCard(
-                    title: 'Deep Cleaning Service',
-                    price: '\$65',
-                    status: 'Active',
-                    views: '856',
-                    orders: '89',
-                    statusBackgroundColor: const Color(0xFFE8F5E9),
-                    statusTextColor: Colors.green,
-                  ),
-                  _buildGigCard(
-                    title: 'Office Cleaning',
-                    price: '\$80',
-                    status: 'Suspended',
-                    views: '432',
-                    orders: '45',
-                    statusBackgroundColor: const Color(0xFFFFEBEE),
-                    statusTextColor: Colors.red,
-                  ),
-                  _buildGigCard(
-                    title: 'Move-in/out Cleaning',
-                    price: '\$120',
-                    status: 'Under Review',
-                    views: '234',
-                    orders: '12',
-                    statusBackgroundColor: const Color(0xFFFFF3E0),
-                    statusTextColor: Colors.orange,
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
             ),
           ],
@@ -106,14 +136,35 @@ class FreelancerGigsScreen extends StatelessWidget {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: const Color(0xFF4E342E),
         unselectedItemColor: Colors.grey,
-        selectedLabelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12),
-        unselectedLabelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12),
+        selectedLabelStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 12,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 12,
+        ),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.work_outline), label: 'Gigs'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag_outlined), label: 'Orders'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Messages'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Analyse'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.grid_view),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.work_outline),
+            label: 'Gigs',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_bag_outlined),
+            label: 'Orders',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Messages',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Analyse',
+          ),
         ],
       ),
     );
@@ -192,16 +243,28 @@ class FreelancerGigsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              const Icon(Icons.visibility_outlined, size: 16, color: Colors.grey),
+              const Icon(
+                Icons.visibility_outlined,
+                size: 16,
+                color: Colors.grey,
+              ),
               const SizedBox(width: 4),
               Text(
                 '$views views',
-                style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.grey),
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 13,
+                  color: Colors.grey,
+                ),
               ),
               const SizedBox(width: 20),
               Text(
                 '$orders orders',
-                style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.grey),
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 13,
+                  color: Colors.grey,
+                ),
               ),
             ],
           ),

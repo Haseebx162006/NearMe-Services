@@ -84,3 +84,23 @@ async def signup(user: CustomerCreate):
     
 async def getname(user):
     return {"name": user['name']}
+
+async def get_me(user):
+    # Create a copy so we do not mutate the dictionary directly
+    user_dict = dict(user)
+    
+    # Cast ObjectId to string so it can be serialized to JSON
+    if '_id' in user_dict:
+        user_dict['_id'] = str(user_dict['_id'])
+        
+    # Remove the sensitive password field
+    user_dict.pop('passwrd', None)
+    user_dict.pop('password', None)
+    
+    # Make sure times are serialized
+    if 'created_at' in user_dict and isinstance(user_dict['created_at'], datetime):
+        user_dict['created_at'] = user_dict['created_at'].isoformat()
+    if 'updated_at' in user_dict and isinstance(user_dict['updated_at'], datetime):
+        user_dict['updated_at'] = user_dict['updated_at'].isoformat()
+        
+    return user_dict

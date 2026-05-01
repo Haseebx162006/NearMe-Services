@@ -62,7 +62,7 @@ class UserModel {
       id: json['_id'],
       name: json['name'],
       email: json['email'],
-      password: json['passwrd'],
+      password: json['passwrd'] ?? "",
       phoneNumber: json['phone_number'],
       role: json['role'],
       profilePicture: json['profile_picture'],
