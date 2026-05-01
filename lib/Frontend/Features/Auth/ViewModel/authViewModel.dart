@@ -1,3 +1,5 @@
+import 'package:geolocator/geolocator.dart';
+import 'package:near_me/Frontend/Features/Search/Repository/SearchRepo.dart';
 import 'package:near_me/Frontend/Features/Auth/Model/UserModel.dart';
 import 'package:near_me/Frontend/Features/Auth/Repository/AuthRepo.dart';
 import 'package:riverpod/riverpod.dart';
@@ -24,6 +26,7 @@ class Authviewmodel extends AsyncNotifier<UserModel?> {
     state = await AsyncValue.guard(() async {
       final token = await _repo.login(email, password);
       if (token != null) {
+        await _detectAndSaveLocation();
         return await _repo.getUserData();
       }
       return null;
@@ -36,10 +39,42 @@ class Authviewmodel extends AsyncNotifier<UserModel?> {
     state = await AsyncValue.guard(() async {
       final token = await _repo.signup(user);
       if (token != null) {
+        await _detectAndSaveLocation();
         return await _repo.getUserData();
       }
       return null;
     });
+  }
+
+  /// Prompts for GPS permission, gets the location, and saves it to backend.
+  Future<void> _detectAndSaveLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // If location services are disabled, we might not get a location,
+        // but we can still try to request permission just in case.
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      if (permission == LocationPermission.deniedForever) return;
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+
+      final searchRepo = SearchRepository();
+      await searchRepo.updateUserLocation(
+        longitude: position.longitude,
+        latitude: position.latitude,
+      );
+      print('[AuthViewModel] Location saved during auth!');
+    } catch (e) {
+      print('[AuthViewModel] Location detection/saving failed: $e');
+    }
   }
 
   Future<void> logout() async {

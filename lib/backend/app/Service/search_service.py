@@ -101,6 +101,8 @@ class SearchService:
         page: int = 1,
         page_size: int = 20,
         use_heap_rank: bool = False,
+        latitude: float = None,
+        longitude: float = None,
     ) -> dict[str, Any]:
         # This argument is kept only so existing route code still works.
         _ = use_heap_rank
@@ -127,8 +129,13 @@ class SearchService:
         # Step 2: Make sure required indexes exist.
         await self.ensure_indexes()
 
-        # Step 3: Load request user coordinates.
-        coordinates = await self._get_user_coordinates(user_id)
+        # Step 3: Load coordinates.
+        # If the frontend sent latitude/longitude directly, use those.
+        # Otherwise fall back to the user document lookup.
+        if latitude is not None and longitude is not None:
+            coordinates = [float(longitude), float(latitude)]
+        else:
+            coordinates = await self._get_user_coordinates(user_id)
 
         # Step 4: Build filter and pagination values.
         skip = (page - 1) * page_size
@@ -140,7 +147,7 @@ class SearchService:
                 "$geoNear": {
                     "near": {"type": "Point", "coordinates": coordinates},
                     "distanceField": "distance_meters",
-                    "maxDistance": radius_km * 10000.0,
+                    "maxDistance": radius_km * 1000.0,
                     "spherical": True,
                     "query": {"role": "freelancer", "is_active": True},
                 }

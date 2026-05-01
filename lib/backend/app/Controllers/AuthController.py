@@ -104,3 +104,48 @@ async def get_me(user):
         user_dict['updated_at'] = user_dict['updated_at'].isoformat()
         
     return user_dict
+
+
+async def update_location(user, longitude: float, latitude: float):
+    """
+    Updates the user's location in the database.
+    Called from the Flutter app when the user's GPS position is detected.
+    Stores it as GeoJSON Point so MongoDB's $geoNear queries work correctly.
+    """
+    from bson import ObjectId
+
+    try:
+        user_id = user["_id"]
+
+        # Validate coordinate ranges
+        if not (-180 <= longitude <= 180):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Longitude must be between -180 and 180",
+            )
+        if not (-90 <= latitude <= 90):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Latitude must be between -90 and 90",
+            )
+
+        # GeoJSON format: [longitude, latitude]
+        location_doc = {
+            "type": "Point",
+            "coordinates": [longitude, latitude],
+        }
+
+        await db.users.update_one(
+            {"_id": user_id},
+            {"$set": {"location": location_doc}},
+        )
+
+        return {"message": "Location updated successfully"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Could not update location: {str(e)}",
+        )

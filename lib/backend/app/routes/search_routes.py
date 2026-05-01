@@ -39,12 +39,14 @@ class NearbyGigSearchResponse(BaseModel):
 
 @router.get("/nearby-gigs", response_model=NearbyGigSearchResponse)
 async def search_nearby_gigs(
-    radius_km: float = Query(10, gt=0, le=100),
+    radius_km: float = Query(10, gt=0, le=1000),
     search: str = Query("", max_length=100),
     category: str = Query("", max_length=60),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     use_heap_rank: bool = Query(False),
+    latitude: Optional[float] = Query(None, ge=-90, le=90),
+    longitude: Optional[float] = Query(None, ge=-180, le=180),
     current_user: dict = Depends(get_current_user),
 ):
     return await service.search_nearby_gigs(
@@ -55,4 +57,6 @@ async def search_nearby_gigs(
         page=page,
         page_size=page_size,
         use_heap_rank=use_heap_rank,
+        latitude=latitude,
+        longitude=longitude,
     )
