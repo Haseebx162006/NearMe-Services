@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
+
 import '../Theme/app_colors.dart';
 
-class CustomerMainScreen extends StatefulWidget {
+class CustomerMainScreen extends ConsumerStatefulWidget {
   const CustomerMainScreen({super.key});
 
   @override
-  State<CustomerMainScreen> createState() => _CustomerMainScreenState();
+  ConsumerState<CustomerMainScreen> createState() => _CustomerMainScreenState();
 }
 
-class _CustomerMainScreenState extends State<CustomerMainScreen> {
+class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
   int _selectedIndex = 0;
+  
+  
 
   @override
   Widget build(BuildContext context) {
@@ -41,23 +46,33 @@ class _CustomerMainScreenState extends State<CustomerMainScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.location_on, color: Color(0xFFBCA073), size: 16),
-                          SizedBox(width: 4),
-                          Text(
+                          const Icon(Icons.location_on, color: Color(0xFFBCA073), size: 16),
+                          const SizedBox(width: 4),
+                          const Text(
                             'Downtown · 10 km radius',
                             style: TextStyle(fontFamily: 'Poppins', fontSize: 12, color: AppColors.textSecondary),
                           ),
                         ],
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Good morning, Alex 👋',
-                        style: TextStyle(fontFamily: 'Poppins', fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF3E2723)),
+                      const SizedBox(height: 4),
+                      FutureBuilder<String?>(
+                        future: ref.read(authprovider.notifier).getName(),
+                        builder: (context, snapshot) {
+                          final displayName = snapshot.data ?? 'User';
+                          return Text(
+                            'Good morning, $displayName!',
+                            style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF3E2723)),
+                          );
+                        },
                       ),
                     ],
                   ),

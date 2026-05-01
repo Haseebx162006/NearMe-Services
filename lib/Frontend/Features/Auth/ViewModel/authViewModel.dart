@@ -40,7 +40,7 @@ class Authviewmodel extends AsyncNotifier<String?> {
     state = const AsyncLoading();
 
     state = await AsyncValue.guard(() async {
-      await _repo.logout();  
+      await _repo.logout();
       return null;
     });
   }
@@ -49,5 +49,9 @@ class Authviewmodel extends AsyncNotifier<String?> {
   /// Call this when the user wants to try again after a failed signup/login.
   void resetState() {
     state = const AsyncData(null);
+  }
+
+  Future<String?> getName() async {
+    return await _repo.getName();
   }
 }

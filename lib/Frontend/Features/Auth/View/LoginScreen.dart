@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
+import 'package:near_me/Frontend/Views/CustomerMainScreen.dart';
 import 'SignupScreen.dart';
 import '../../../Theme/app_colors.dart';
 import '../../../Components/custom_textfield.dart';
@@ -36,7 +37,10 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
     ref.listen(authprovider, (prev, next) {
       next.whenData((token) {
         if (token != null) {
-          Navigator.pushReplacementNamed(context, '/home');
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => CustomerMainScreen()),
+          );
         }
       });
 

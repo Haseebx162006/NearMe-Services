@@ -4,6 +4,7 @@ from schema.userSchema import CustomerCreate, LoginRequest
 from core.access_token import create_token
 from core.security import verify_password, hash_password
 from core.database import db
+from core.access_token import get_current_user
 
 async def login(user: LoginRequest):
     #here i will authenticate the user and then create a token for them
@@ -79,3 +80,7 @@ async def signup(user: CustomerCreate):
     except Exception as e:
         print(f"Signup Error: {e}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Could not create user: {str(e)}")
+    
+    
+async def getname(user):
+    return {"name": user['name']}

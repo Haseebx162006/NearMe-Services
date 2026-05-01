@@ -47,8 +47,6 @@ class AuthRepository {
         'password': user.password,
       };
 
-      // Only include location if the user actually set real coordinates
-      // Don't send the placeholder [0.0, 0.0] — it can break MongoDB's 2dsphere index
       if (user.location != null &&
           user.location!.coordinates.isNotEmpty &&
           !(user.location!.coordinates[0] == 0.0 &&
@@ -92,5 +90,29 @@ class AuthRepository {
   Future<bool> isLoggedIn() async {
     final token = await _secureStorage.getToken();
     return token != null && token.isNotEmpty;
+  }
+
+  Future<String?> getName() async {
+    try {
+      final token = await _secureStorage.getToken();
+      if (token == null) {
+        throw Exception("No token found. User might not be logged in.");
+      }
+
+      final response = await _dio.get(
+        '/auth/getname',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data['name'];
+      } else {
+        throw Exception(
+          "Failed to fetch name. Status code: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      throw Exception("Failed to fetch name: $e");
+    }
   }
 }
