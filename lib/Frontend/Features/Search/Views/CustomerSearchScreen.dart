@@ -48,7 +48,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('⚠️ Please enable GPS/Location services!'),
+              content: Text('️ Please enable GPS/Location services!'),
               backgroundColor: Colors.orange,
               duration: Duration(seconds: 4),
             ),
@@ -67,7 +67,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
         if (permission == LocationPermission.denied) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('⚠️ Location permission denied'),
+              content: Text('️ Location permission denied'),
               backgroundColor: Colors.red,
             ),
           );
@@ -80,7 +80,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
       if (permission == LocationPermission.deniedForever) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('⚠️ Location permission permanently denied. Enable in Settings.'),
+            content: Text(' Location permission permanently denied. Enable in Settings.'),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),
@@ -122,18 +122,18 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
 
         // Move map to the REAL position
         _mapController.move(_userPosition, 14.0);
-        debugPrint('[GPS] ✅ Using real GPS: ${position.latitude}, ${position.longitude}');
+        debugPrint('[GPS]  Using real GPS: ${position.latitude}, ${position.longitude}');
       } else {
         // GPS completely failed — show warning and use default
         setState(() => _isLocating = false);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('⚠️ Could not detect GPS. Showing default location.'),
+            content: Text('️ Could not detect GPS. Showing default location.'),
             backgroundColor: Colors.orange,
             duration: Duration(seconds: 3),
           ),
         );
-        debugPrint('[GPS] ❌ All GPS methods failed, using default Lahore coords');
+        debugPrint('[GPS]  All GPS methods failed, using default Lahore coords');
       }
 
       // Search with whatever position we have

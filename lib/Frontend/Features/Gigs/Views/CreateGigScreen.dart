@@ -63,7 +63,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
       if (!mounted) return;
       if (!serviceEnabled) {
         setState(
-            () => _locationStatus = '⚠️ Location services are disabled');
+            () => _locationStatus = '️ Location services are disabled');
         return;
       }
 
@@ -72,14 +72,14 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
         permission = await Geolocator.requestPermission();
         if (!mounted) return;
         if (permission == LocationPermission.denied) {
-          setState(() => _locationStatus = '⚠️ Location permission denied');
+          setState(() => _locationStatus = '️ Location permission denied');
           return;
         }
       }
       if (!mounted) return;
       if (permission == LocationPermission.deniedForever) {
         setState(
-            () => _locationStatus = '⚠️ Location permission permanently denied');
+            () => _locationStatus = '️ Location permission permanently denied');
         return;
       }
 
@@ -94,11 +94,11 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
         _latitude = position.latitude;
         _longitude = position.longitude;
         _locationStatus =
-            '📍 Location detected (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
+            ' Location detected (${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)})';
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _locationStatus = '⚠️ Could not detect location');
+      setState(() => _locationStatus = '️ Could not detect location');
     }
   }
 
@@ -172,7 +172,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Gig created successfully! 🎉'),
+          content: Text('Gig created successfully! '),
           backgroundColor: Color(0xFF16A34A),
         ),
       );

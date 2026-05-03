@@ -90,7 +90,7 @@ class FreelancerInboxScreen extends StatelessWidget {
                   _buildChatTile(
                     name: 'Alex Johnson',
                     service: 'House Cleaning · Sat May 3, 2PM',
-                    message: 'Perfect, confirmed! See you then 🥳',
+                    message: 'Perfect, confirmed! See you then ',
                     time: '10:36 AM',
                     initials: 'AJ',
                     avatarColor: const Color(0xFF4E342E),

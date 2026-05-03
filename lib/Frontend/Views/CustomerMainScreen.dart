@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
+import 'package:near_me/Frontend/Features/Gigs/Model/GigModel.dart';
 import 'package:near_me/Frontend/Features/Gigs/viewModel/viewModel.dart';
 
 import '../Theme/app_colors.dart';
@@ -17,6 +18,110 @@ class CustomerMainScreen extends ConsumerStatefulWidget {
 
 class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
   int _selectedIndex = 0;
+  String _selectedCategory = 'All';
+  final Set<String> _likedGigIds = {};
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
+  void _showGigDetails(GigModel gig) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              gig.title,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF3E2723),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              gig.category,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              gig.description,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '\$${gig.price.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF4E342E),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4E342E),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text(
+                    'View Details',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,13 +193,19 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                           size: 16,
                         ),
                         const SizedBox(width: 4),
-                        const Text(
-                          'Downtown · 10 km radius',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final user = ref.watch(authprovider).value;
+                            final radius = user?.preferredRadiusKm ?? 10;
+                            return Text(
+                              'Within $radius km radius',
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -104,7 +215,7 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                         final authState = ref.watch(authprovider);
                         return authState.when(
                           data: (user) => Text(
-                            'Good morning, ${user?.name ?? 'User'}!',
+                            '${_getGreeting()}, ${user?.name ?? 'User'}!',
                             style: const TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 20,
@@ -112,16 +223,16 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                               color: Color(0xFF3E2723),
                             ),
                           ),
-                          loading: () => const Text(
-                            'Good morning...',
-                            style: TextStyle(
+                          loading: () => Text(
+                            '${_getGreeting()}...',
+                            style: const TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 20,
                             ),
                           ),
-                          error: (_, _) => const Text(
-                            'Good morning, User!',
-                            style: TextStyle(
+                          error: (_, _) => Text(
+                            '${_getGreeting()}, User!',
+                            style: const TextStyle(
                               fontFamily: 'Poppins',
                               fontSize: 20,
                             ),
@@ -133,16 +244,29 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                 ),
                 Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: const Icon(
-                        Icons.notifications_none,
-                        color: AppColors.textPrimary,
+                    GestureDetector(
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'No new notifications',
+                              style: TextStyle(fontFamily: 'Poppins'),
+                            ),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: const Icon(
+                          Icons.notifications_none,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -183,70 +307,141 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
             const SizedBox(height: 24),
 
             // Search Bar
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.search, color: AppColors.textHint),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'What service do you need?',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        color: AppColors.textHint,
+            GestureDetector(
+              onTap: () => setState(() => _selectedIndex = 1),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search, color: AppColors.textHint),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'What service do you need?',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: AppColors.textHint,
+                        ),
                       ),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF3E5D8),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'Search',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF4E342E),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3E5D8),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Search',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF4E342E),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),
 
             // Stats Box
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4E342E),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  _buildStatItem(Icons.bolt, '48', 'Active Now'),
-                  _buildStatDivider(),
-                  _buildStatItem(Icons.access_time, '~8 min', 'Avg Response'),
-                  _buildStatDivider(),
-                  _buildStatItem(
-                    Icons.verified_user_outlined,
-                    '100%',
-                    'Verified',
+            Consumer(
+              builder: (context, ref, child) {
+                final gigsAsync = ref.watch(gigprovider);
+                return gigsAsync.when(
+                  data: (gigs) {
+                    final activeCount = gigs.where((g) => g.isActive).length;
+                    final avgRating = gigs.isNotEmpty
+                        ? gigs.map((g) => g.rating).reduce((a, b) => a + b) /
+                            gigs.length
+                        : 0.0;
+                    final uniqueCategories =
+                        gigs.map((g) => g.category).toSet().length;
+
+                    return Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4E342E),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildStatItem(
+                            Icons.bolt,
+                            activeCount.toString(),
+                            'Active Now',
+                          ),
+                          _buildStatDivider(),
+                          _buildStatItem(
+                            Icons.star,
+                            avgRating > 0
+                                ? avgRating.toStringAsFixed(1)
+                                : '-',
+                            'Avg Rating',
+                          ),
+                          _buildStatDivider(),
+                          _buildStatItem(
+                            Icons.category_outlined,
+                            uniqueCategories.toString(),
+                            'Categories',
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  loading: () => Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4E342E),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFFBCA073),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                  error: (_, __) => Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4E342E),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Unable to load stats',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 32),
 
@@ -266,21 +461,47 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
               ],
             ),
             const SizedBox(height: 16),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildCategoryItem('All', Icons.bolt, true),
-                  const SizedBox(width: 12),
-                  _buildCategoryItem(
-                    'Cleaning',
-                    Icons.cleaning_services_outlined,
-                    false,
+            Consumer(
+              builder: (context, ref, child) {
+                final gigsAsync = ref.watch(gigprovider);
+                final categories = gigsAsync.when(
+                  data: (gigs) {
+                    final cats = gigs.map((g) => g.category).toSet().toList();
+                    cats.sort();
+                    return ['All', ...cats];
+                  },
+                  loading: () => ['All', 'Cleaning', 'Repair'],
+                  error: (_, __) => ['All', 'Cleaning', 'Repair'],
+                );
+
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: categories.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final category = entry.value;
+                      final isActive = _selectedCategory == category;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          left: index == 0 ? 0 : 12,
+                        ),
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedCategory = category;
+                            });
+                          },
+                          child: _buildCategoryItem(
+                            category,
+                            _categoryIcon(category),
+                            isActive,
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
-                  const SizedBox(width: 12),
-                  _buildCategoryItem('Repair', Icons.build_outlined, false),
-                ],
-              ),
+                );
+              },
             ),
             const SizedBox(height: 32),
 
@@ -307,7 +528,7 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'New User Offer 🎊',
+                          'New User Offer ',
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.bold,
@@ -325,31 +546,44 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Row(
-                      children: [
-                        Text(
-                          'Claim',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                  GestureDetector(
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Offers coming soon!',
+                            style: TextStyle(fontFamily: 'Poppins'),
                           ),
+                          duration: Duration(seconds: 2),
                         ),
-                        Icon(
-                          Icons.arrow_forward,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ],
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        children: [
+                          Text(
+                            'Claim',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -371,7 +605,7 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                   ),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () => setState(() => _selectedIndex = 1),
                   child: const Row(
                     children: [
                       Text(
@@ -399,7 +633,18 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
 
                 return gigsAsyncValue.when(
                   data: (gigs) {
-                    if (gigs.isEmpty) {
+                    final filteredGigs =
+                        _selectedCategory == 'All'
+                            ? gigs
+                            : gigs
+                                .where(
+                                  (g) =>
+                                      g.category.toLowerCase() ==
+                                      _selectedCategory.toLowerCase(),
+                                )
+                                .toList();
+
+                    if (filteredGigs.isEmpty) {
                       return const Center(
                         child: Text(
                           'No featured gigs found at the moment.',
@@ -414,204 +659,236 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                     return ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: gigs.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 16),
+                      itemCount: filteredGigs.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
                       itemBuilder: (context, index) {
-                        final gig = gigs[index];
-                        final image = (gig.images.isNotEmpty)
-                            ? gig.images.first
-                            : 'https://images.unsplash.com/photo-1581578731522-99459173d8ff?q=80&w=1000&auto=format&fit=crop';
+                        final gig = filteredGigs[index];
+                        final hasImage = gig.images.isNotEmpty;
+                        final isLiked = _likedGigIds.contains(gig.id ?? '');
 
-                        return Stack(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(24),
-                              child: Image.network(
-                                image,
-                                height: 240,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => Container(
-                                  height: 240,
-                                  color: Colors.grey[300],
-                                  child: const Icon(
-                                    Icons.image_not_supported,
-                                    color: Colors.grey,
-                                    size: 50,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 12,
-                              left: 12,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFBCA073),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    Icon(
-                                      Icons.star,
-                                      color: Colors.white,
-                                      size: 14,
-                                    ),
-                                    SizedBox(width: 4),
-                                    Text(
-                                      'Top Pick',
-                                      style: TextStyle(
-                                        fontFamily: 'Poppins',
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
+                        return GestureDetector(
+                          onTap: () => _showGigDetails(gig),
+                          child: Stack(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: hasImage
+                                    ? Image.network(
+                                        gig.images.first,
+                                        height: 240,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Container(
+                                          height: 240,
+                                          color: Colors.grey[300],
+                                          child: const Icon(
+                                            Icons.image_not_supported,
+                                            color: Colors.grey,
+                                            size: 50,
+                                          ),
+                                        ),
+                                      )
+                                    : Container(
+                                        height: 240,
+                                        width: double.infinity,
+                                        color: Colors.grey[300],
+                                        child: const Icon(
+                                          Icons.image_not_supported,
+                                          color: Colors.grey,
+                                          size: 50,
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
                               ),
-                            ),
-                            Positioned(
-                              top: 12,
-                              right: 12,
-                              child: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.3),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.favorite_border,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.bottomCenter,
-                                    end: Alignment.topCenter,
-                                    colors: [
-                                      Colors.black.withOpacity(0.8),
-                                      Colors.transparent,
+                              Positioned(
+                                top: 12,
+                                left: 12,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFBCA073),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.label_outline,
+                                        color: Colors.white,
+                                        size: 14,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        gig.category,
+                                        style: const TextStyle(
+                                          fontFamily: 'Poppins',
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ],
                                   ),
-                                  borderRadius: const BorderRadius.only(
-                                    bottomLeft: Radius.circular(24),
-                                    bottomRight: Radius.circular(24),
+                                ),
+                              ),
+                              Positioned(
+                                top: 12,
+                                right: 12,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      final id = gig.id ?? '';
+                                      if (_likedGigIds.contains(id)) {
+                                        _likedGigIds.remove(id);
+                                      } else {
+                                        _likedGigIds.add(id);
+                                      }
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.3),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      isLiked
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      color:
+                                          isLiked
+                                              ? Colors.redAccent
+                                              : Colors.white,
+                                      size: 20,
+                                    ),
                                   ),
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      gig.title,
-                                      style: const TextStyle(
-                                        fontFamily: 'Poppins',
-                                        color: Colors.white,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.bottomCenter,
+                                      end: Alignment.topCenter,
+                                      colors: [
+                                        Colors.black.withOpacity(0.8),
+                                        Colors.transparent,
+                                      ],
                                     ),
-                                    Text(
-                                      gig.description,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontFamily: 'Poppins',
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                      ),
+                                    borderRadius: const BorderRadius.only(
+                                      bottomLeft: Radius.circular(24),
+                                      bottomRight: Radius.circular(24),
                                     ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            const CircleAvatar(
-                                              radius: 12,
-                                              backgroundColor: Colors.white,
-                                              child: Icon(
-                                                Icons.person,
-                                                size: 16,
-                                                color: Color(0xFF4E342E),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        gig.title,
+                                        style: const TextStyle(
+                                          fontFamily: 'Poppins',
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      Text(
+                                        gig.description,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontFamily: 'Poppins',
+                                          color: Colors.white70,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              const CircleAvatar(
+                                                radius: 12,
+                                                backgroundColor: Colors.white,
+                                                child: Icon(
+                                                  Icons.person,
+                                                  size: 16,
+                                                  color: Color(0xFF4E342E),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                gig.category,
+                                                style: const TextStyle(
+                                                  fontFamily: 'Poppins',
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 12),
+                                              const Icon(
+                                                Icons.star,
+                                                color: Color(0xFFBCA073),
+                                                size: 14,
+                                              ),
+                                              Text(
+                                                ' ${gig.rating.toStringAsFixed(1)}',
+                                                style: const TextStyle(
+                                                  fontFamily: 'Poppins',
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                              vertical: 6,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(
+                                                0.2,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(12),
+                                              border: Border.all(
+                                                color: Colors.white30,
                                               ),
                                             ),
-                                            const SizedBox(width: 8),
-                                            const Text(
-                                              'Pro Provider',
-                                              style: TextStyle(
-                                                fontFamily: 'Poppins',
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 12),
-                                            const Icon(
-                                              Icons.star,
-                                              color: Color(0xFFBCA073),
-                                              size: 14,
-                                            ),
-                                            Text(
-                                              ' ${gig.rating.toStringAsFixed(1)}',
+                                            child: Text(
+                                              '\$${gig.price.toStringAsFixed(0)}',
                                               style: const TextStyle(
                                                 fontFamily: 'Poppins',
                                                 color: Colors.white,
-                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
                                               ),
                                             ),
-                                          ],
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 6,
                                           ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(
-                                              0.2,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.white30,
-                                            ),
-                                          ),
-                                          child: Text(
-                                            '\$${gig.price.toStringAsFixed(0)}',
-                                            style: const TextStyle(
-                                              fontFamily: 'Poppins',
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         );
                       },
                     );
                   },
                   loading: () => const Center(
-                    child: CircularProgressIndicator(color: Color(0xFFBCA073)),
+                    child: CircularProgressIndicator(
+                      color: Color(0xFFBCA073),
+                    ),
                   ),
                   error: (err, stack) => Center(
                     child: Text(
@@ -631,6 +908,29 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
         ),
       ),
     );
+  }
+
+  IconData _categoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'cleaning':
+        return Icons.cleaning_services_outlined;
+      case 'repair':
+        return Icons.build_outlined;
+      case 'plumbing':
+        return Icons.plumbing_outlined;
+      case 'electrical':
+        return Icons.electrical_services_outlined;
+      case 'tutoring':
+        return Icons.school_outlined;
+      case 'design':
+        return Icons.design_services_outlined;
+      case 'photography':
+        return Icons.camera_alt_outlined;
+      case 'delivery':
+        return Icons.delivery_dining_outlined;
+      default:
+        return Icons.bolt;
+    }
   }
 
   Widget _buildStatItem(IconData icon, String value, String label) {
