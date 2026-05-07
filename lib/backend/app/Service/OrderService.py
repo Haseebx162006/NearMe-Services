@@ -8,7 +8,7 @@ class OrderService:
     def __init__(self):
         self.db = db
 
-    def _serialize_order(self, order: dict) -> dict:
+    def _serialize_order(self, order: dict):
         serialized = dict(order )
         serialized["_id"] = str(serialized["_id"])
         return serialized
@@ -72,14 +72,11 @@ class OrderService:
         return {"message": "Order updated successfully"}
 
     async def enqueue_acceptance_request(self, order_id: str, freelancer_id: str):
-        """
-        Pushes an order acceptance request into the custom FIFO queue.
-        This provides immediate response to the client while enqueuing the job locally.
-        """
-        # Validate ID format immediately to fail fast if malformed
+       
+       
         validate_object_id(order_id)
         
-        from queue.AcceptanceQueue import order_queue
+        from task_queue.AcceptanceQueue import order_queue
         
         # Enqueue the request
         order_queue.enqueue({
@@ -90,14 +87,11 @@ class OrderService:
         return {"message": "Order acceptance request added to queue successfully"}
 
     async def assign_order_atomically(self, order_id: str, freelancer_id: str):
-        """
-        Executed by the backend worker. Uses MongoDB find_one_and_update to 
-        assign an order safely. Only assigns if the current status is 'OPEN'.
-        """
+       
         order_object_id = validate_object_id(order_id)
         
-        # Perform an atomic find and update.
-        # This query only matches the exact ID IF the status is "OPEN".
+        
+        
         updated_order = await self.db.orders.find_one_and_update(
             {"_id": order_object_id, "status": "OPEN"},
             {"$set": {
@@ -108,8 +102,7 @@ class OrderService:
         )
         
         if updated_order:
-            # Successfully assigned
             return True
         else:
-            # This triggers if the order doesn't exist, OR if the status was no longer "OPEN".
+            
             return False

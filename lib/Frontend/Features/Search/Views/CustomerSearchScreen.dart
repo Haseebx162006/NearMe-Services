@@ -219,10 +219,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
 
                     // Freelancer gig markers from search results
                     ...searchState.gigs.map((gig) {
-                      // We don't have individual freelancer coordinates
-                      // from the search response, so we place markers in
-                      // a circle around the user based on distance_km.
-                      // This is a visual approximation.
+                      
                       final markerPos = _estimateGigPosition(gig);
                       final initials = _getInitials(gig.title);
 

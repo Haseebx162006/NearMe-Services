@@ -12,10 +12,14 @@ class Authviewmodel extends AsyncNotifier<UserModel?> {
   final _repo = AuthRepository();
   @override
   Future<UserModel?> build() async {
-    final loggedIn = await _repo.isLoggedIn();
+    try {
+      final loggedIn = await _repo.isLoggedIn();
 
-    if (loggedIn) {
-      return await _repo.getUserData();
+      if (loggedIn) {
+        return await _repo.getUserData();
+      }
+    } catch (e) {
+      print('[AuthViewModel] Error during build: $e');
     }
     return null;
   }
@@ -63,7 +67,9 @@ class Authviewmodel extends AsyncNotifier<UserModel?> {
       if (permission == LocationPermission.deniedForever) return;
 
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
 
       final searchRepo = SearchRepository();

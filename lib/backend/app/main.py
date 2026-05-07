@@ -9,7 +9,7 @@ from routes.payment_routes import router as payment_router
 from routes.search_routes import router as search_router
 from routes.analytics_routes import router as analytics_router
 from Service.search_service import SearchService
-from queue.AcceptanceQueue import process_order_acceptance_worker
+from task_queue.AcceptanceQueue import process_order_acceptance_worker
 
 search_service = SearchService()
 

@@ -82,11 +82,23 @@ class CustomerProfileScreen extends ConsumerWidget {
                   'Phone',
                   user.phoneNumber,
                 ),
+                if (user.location != null)
+                  _buildProfileOption(
+                    Icons.location_on_outlined,
+                    'Location',
+                    'Lat: ${user.location!.coordinates[1].toStringAsFixed(2)}, Lng: ${user.location!.coordinates[0].toStringAsFixed(2)} · ${user.preferredRadiusKm} km radius',
+                  )
+                else
+                  _buildProfileOption(
+                    Icons.location_on_outlined,
+                    'Location',
+                    'Location not set',
+                  ),
                 _buildProfileOption(
-                  Icons.location_on_outlined,
-                  'Location',
-                  'Downtown · 10 km radius',
-                ), // Hardcoded for now
+                  Icons.account_balance_wallet_outlined,
+                  'Wallet',
+                  '\$${user.wallet.toStringAsFixed(2)}',
+                ),
                 _buildProfileOption(
                   Icons.history_outlined,
                   'Order History',

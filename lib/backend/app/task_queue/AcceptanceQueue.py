@@ -1,20 +1,16 @@
 import asyncio
 import logging
 
-# Set up a basic logger for the background worker
+
 logger = logging.getLogger("order_queue")
 
 class Node:
-    """Linked list node for the custom FIFO queue."""
     def __init__(self, data: dict):
         self.data = data
         self.next = None
 
 class CustomFIFOQueue:
-    """
-    A custom asynchronous FIFO queue implemented via a linked list.
-    It uses asyncio.Event() to efficiently wait for new items without blocking.
-    """
+    
     def __init__(self):
         self.head = None
         self.tail = None
@@ -22,7 +18,7 @@ class CustomFIFOQueue:
         self._item_available = asyncio.Event()
 
     def enqueue(self, item: dict):
-        """Add an item to the end of the linked list."""
+    
         new_node = Node(item)
         if self.tail is None:
             self.head = new_node
@@ -32,15 +28,11 @@ class CustomFIFOQueue:
             self.tail = new_node
         
         self._count += 1
-        # Signal that an item is now available for the worker
+        #
         self._item_available.set()
 
     async def dequeue(self) -> dict:
-        """
-        Remove and return an item from the front of the list.
-        If empty, it waits asynchronously until an item is enqueued.
-        """
-        # Wait asynchronously until at least one item is in the queue
+        
         while self.is_empty():
             self._item_available.clear()
             await self._item_available.wait()
@@ -56,23 +48,20 @@ class CustomFIFOQueue:
         return node.data
 
     def is_empty(self) -> bool:
-        """Check if the queue is empty."""
+        
         return self.head is None
 
     def size(self) -> int:
-        """Return the current number of items in the queue."""
+        
         return self._count
 
 
-# Global singleton instance of our queue
+
 order_queue = CustomFIFOQueue()
 
 
 async def process_order_acceptance_worker():
-    """
-    Background worker that continuously monitors the CustomFIFOQueue 
-    and handles order assignment sequentially to prevent race conditions.
-    """
+   
     # Lazy import to avoid circular dependency
     from Service.OrderService import OrderService
     
@@ -81,7 +70,7 @@ async def process_order_acceptance_worker():
     
     while True:
         try:
-            # This will wait (yield control) until an item is successfully dequeued
+            
             task = await order_queue.dequeue()
             
             order_id = task.get("order_id")
@@ -89,7 +78,7 @@ async def process_order_acceptance_worker():
             
             logger.info(f"Processing acceptance request: Order {order_id} by Freelancer {freelancer_id}")
             
-            # Delegate to the atomic assignment logic in the service layer
+           
             await order_service.assign_order_atomically(order_id, freelancer_id)
             
         except asyncio.CancelledError:
