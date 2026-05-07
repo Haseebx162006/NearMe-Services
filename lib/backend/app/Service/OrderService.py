@@ -70,3 +70,46 @@ class OrderService:
         update_data.pop("_id", None)
         await self.db.orders.update_one({"_id": order_object_id}, {"$set": update_data})
         return {"message": "Order updated successfully"}
+
+    async def enqueue_acceptance_request(self, order_id: str, freelancer_id: str):
+        """
+        Pushes an order acceptance request into the custom FIFO queue.
+        This provides immediate response to the client while enqueuing the job locally.
+        """
+        # Validate ID format immediately to fail fast if malformed
+        validate_object_id(order_id)
+        
+        from queue.AcceptanceQueue import order_queue
+        
+        # Enqueue the request
+        order_queue.enqueue({
+            "order_id": order_id,
+            "freelancer_id": freelancer_id
+        })
+        
+        return {"message": "Order acceptance request added to queue successfully"}
+
+    async def assign_order_atomically(self, order_id: str, freelancer_id: str):
+        """
+        Executed by the backend worker. Uses MongoDB find_one_and_update to 
+        assign an order safely. Only assigns if the current status is 'OPEN'.
+        """
+        order_object_id = validate_object_id(order_id)
+        
+        # Perform an atomic find and update.
+        # This query only matches the exact ID IF the status is "OPEN".
+        updated_order = await self.db.orders.find_one_and_update(
+            {"_id": order_object_id, "status": "OPEN"},
+            {"$set": {
+                "status": "ASSIGNED", 
+                "assigned_freelancer_id": freelancer_id
+            }},
+            return_document=True  # Returns the updated document if successful
+        )
+        
+        if updated_order:
+            # Successfully assigned
+            return True
+        else:
+            # This triggers if the order doesn't exist, OR if the status was no longer "OPEN".
+            return False

@@ -1,4 +1,6 @@
+import asyncio
 from fastapi import FastAPI
+from contextlib import asynccontextmanager
 from routes.auth_routes import router as auth_router
 from routes.gig_routes import router as gig_router
 from routes.order_routes import router as order_router
@@ -7,14 +9,29 @@ from routes.payment_routes import router as payment_router
 from routes.search_routes import router as search_router
 from routes.analytics_routes import router as analytics_router
 from Service.search_service import SearchService
+from queue.AcceptanceQueue import process_order_acceptance_worker
 
-app = FastAPI()
 search_service = SearchService()
 
-
-@app.on_event("startup")
-async def startup_search_indexes():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # --- STARTUP LOGIC ---
     await search_service.ensure_indexes()
+    
+    # Create the background worker task to run sequentially
+    worker_task = asyncio.create_task(process_order_acceptance_worker())
+    
+    yield  # Server runs here
+    
+    # --- SHUTDOWN LOGIC ---
+    # Properly cancel the background task upon server termination
+    worker_task.cancel()
+    try:
+        await worker_task
+    except asyncio.CancelledError:
+        pass
+
+app = FastAPI(lifespan=lifespan)
 
 app.include_router(auth_router)
 app.include_router(gig_router)

@@ -364,7 +364,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
             ),
           ),
 
-          // ─── 3. RE-CENTER BUTTON ───────────────────────────────────
+          
           Positioned(
             right: 20,
             bottom: 220,
