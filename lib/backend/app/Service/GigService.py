@@ -4,6 +4,7 @@ from fastapi import HTTPException, status
 import heapq
 from typing import List
 from utils.Pyobject import validate_object_id
+from datetime import datetime, timezone
 
 
 class GigService:
@@ -58,6 +59,11 @@ class GigService:
         
         payload = dict(data)
         payload['freelancer_id'] = freelancer_id
+        # Backward compatible fields for frontend models
+        payload.setdefault("created_at", datetime.now(timezone.utc))
+        payload.setdefault("is_active", True)
+        # New moderation field for admin panel (old gigs won't have it)
+        payload.setdefault("moderation_status", "pending")
         
         result = await self.db.gigs.insert_one(payload)
         return str(result.inserted_id)

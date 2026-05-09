@@ -7,3 +7,5 @@ passlib[bcrypt]
 python-jose[cryptography]
 passlib[argon2]
 stripe
+cloudinary
+python-multipart

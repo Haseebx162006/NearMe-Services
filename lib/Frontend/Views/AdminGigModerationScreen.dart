@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:near_me/Frontend/Admin/ViewModel/admin_providers.dart';
+import 'package:near_me/Frontend/Features/Gigs/Model/GigModel.dart';
 
-class AdminGigModerationScreen extends StatelessWidget {
+class AdminGigModerationScreen extends ConsumerWidget {
   const AdminGigModerationScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final gigsAsync = ref.watch(adminGigsProvider);
+    final actionState = ref.watch(adminGigModerationControllerProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8F6),
       appBar: AppBar(
@@ -27,57 +33,132 @@ class AdminGigModerationScreen extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Text(
-              '2 gigs pending review',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                color: Colors.grey,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: gigsAsync.when(
+              loading: () => const Text(
+                'Loading gigs…',
+                style: TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.grey),
+              ),
+              error: (e, _) => Text(
+                'Failed to load gigs: $e',
+                style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.red),
+              ),
+              data: (gigs) => Text(
+                '${gigs.length} gigs found',
+                style: const TextStyle(fontFamily: 'Poppins', fontSize: 14, color: Colors.grey),
               ),
             ),
           ),
+          if (actionState.isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: LinearProgressIndicator(minHeight: 2),
+            ),
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                _buildModerationCard(
-                  title: 'Expert Plumbing Services',
-                  freelancer: 'David Williams',
-                  category: 'Repair',
-                  price: '\$80',
-                  submitted: 'Apr 22, 2026',
-                  description: 'Professional plumbing services with 10+ years experience. Available for emergencies.',
-                  imageUrl: 'https://images.unsplash.com/photo-1581094794329-c811ce198ab1?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+            child: gigsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Could not load gigs.\n$e',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontFamily: 'Poppins'),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () => ref.invalidate(adminGigsProvider),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
                 ),
-                _buildModerationCard(
-                  title: 'Mobile Car Wash',
-                  freelancer: 'Alex Thompson',
-                  category: 'Cleaning',
-                  price: '\$35',
-                  submitted: 'Apr 23, 2026',
-                  description: 'Professional car washing and detailing at your location.',
-                  imageUrl: 'https://images.unsplash.com/photo-1520339810219-2bcc48b2a8ed?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
-                ),
-                const SizedBox(height: 20),
-              ],
+              ),
+              data: (gigs) {
+                if (gigs.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No gigs to show.',
+                      style: TextStyle(fontFamily: 'Poppins', color: Colors.grey),
+                    ),
+                  );
+                }
+
+                return RefreshIndicator(
+                  onRefresh: () async => ref.refresh(adminGigsProvider.future),
+                  child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: gigs.length,
+                    itemBuilder: (context, index) {
+                      final gig = gigs[index];
+                      return _ModerationCard(
+                        gig: gig,
+                        onApprove: () async {
+                          final controller =
+                              ref.read(adminGigModerationControllerProvider.notifier);
+                          try {
+                            await controller.approveGig(gigId: gig.id ?? '');
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(e.toString())),
+                              );
+                            }
+                          }
+                        },
+                        onReject: () async {
+                          final controller =
+                              ref.read(adminGigModerationControllerProvider.notifier);
+                          try {
+                            await controller.rejectGig(gigId: gig.id ?? '');
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(e.toString())),
+                              );
+                            }
+                          }
+                        },
+                      );
+                    },
+                  ),
+                );
+              },
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildModerationCard({
-    required String title,
-    required String freelancer,
-    required String category,
-    required String price,
-    required String submitted,
-    required String description,
-    required String imageUrl,
-  }) {
+class _ModerationCard extends StatelessWidget {
+  final GigModel gig;
+  final VoidCallback onApprove;
+  final VoidCallback onReject;
+
+  const _ModerationCard({
+    required this.gig,
+    required this.onApprove,
+    required this.onReject,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final title = gig.title ?? 'Untitled gig';
+    final category = gig.category ?? '—';
+    final price = gig.price != null ? '\$${gig.price}' : '—';
+    final description = gig.description ?? '';
+    final imageUrl = (gig.images != null && gig.images!.isNotEmpty) ? gig.images!.first : null;
+    final status = gig.moderationStatus.isEmpty ? 'approved' : gig.moderationStatus;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 25),
       decoration: BoxDecoration(
@@ -94,22 +175,30 @@ class AdminGigModerationScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            child: Image.network(
-              imageUrl,
-              height: 180,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                height: 180,
-                color: Colors.grey[200],
-                child: const Icon(Icons.image, size: 50, color: Colors.grey),
-              ),
-            ),
+            child: imageUrl == null
+                ? Container(
+                    height: 180,
+                    color: Colors.grey[200],
+                    child: const Center(
+                      child: Icon(Icons.image, size: 50, color: Colors.grey),
+                    ),
+                  )
+                : Image.network(
+                    imageUrl,
+                    height: 180,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      height: 180,
+                      color: Colors.grey[200],
+                      child: const Center(
+                        child: Icon(Icons.image, size: 50, color: Colors.grey),
+                      ),
+                    ),
+                  ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -124,53 +213,49 @@ class AdminGigModerationScreen extends StatelessWidget {
                     color: Color(0xFF3E2723),
                   ),
                 ),
-                Text(
-                  'by $freelancer',
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildMetaColumn('Category', category),
-                    _buildMetaColumn('Price', price),
-                    _buildMetaColumn('Submitted', submitted),
+                    _MetaColumn(label: 'Category', value: category),
+                    _MetaColumn(label: 'Price', value: price),
+                    _MetaColumn(label: 'Status', value: status),
                   ],
                 ),
-                const SizedBox(height: 20),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9F6F2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    description,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      color: Color(0xFF3E2723),
-                      height: 1.4,
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9F6F2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      description,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        color: Color(0xFF3E2723),
+                        height: 1.4,
+                      ),
                     ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: onReject,
                         icon: const Icon(Icons.close, size: 18),
                         label: const Text('Reject'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFD32F2F),
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                       ),
@@ -178,14 +263,16 @@ class AdminGigModerationScreen extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: onApprove,
                         icon: const Icon(Icons.check, size: 18),
                         label: const Text('Approve'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFC7A76D),
                           foregroundColor: Colors.white,
                           elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                       ),
@@ -199,18 +286,22 @@ class AdminGigModerationScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildMetaColumn(String label, String value) {
+class _MetaColumn extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MetaColumn({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 11,
-            color: Colors.grey,
-          ),
+          style: const TextStyle(fontFamily: 'Poppins', fontSize: 11, color: Colors.grey),
         ),
         Text(
           value,

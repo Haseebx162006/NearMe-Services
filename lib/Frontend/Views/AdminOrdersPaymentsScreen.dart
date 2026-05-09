@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:near_me/Frontend/Admin/ViewModel/admin_providers.dart';
+import 'package:near_me/Frontend/Admin/Models/admin_order_model.dart';
 
-class AdminOrdersPaymentsScreen extends StatelessWidget {
+class AdminOrdersPaymentsScreen extends ConsumerWidget {
   const AdminOrdersPaymentsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summaryAsync = ref.watch(adminPaymentsSummaryProvider);
+    final ordersAsync = ref.watch(adminOrdersProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8F6),
       appBar: AppBar(
@@ -24,128 +30,165 @@ class AdminOrdersPaymentsScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(adminPaymentsSummaryProvider);
+          ref.invalidate(adminOrdersProvider);
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           children: [
-            // Stats Header
-            Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                children: [
-                  _buildSummaryBox(
-                    label: 'Total in Escrow',
-                    value: '\$45,890',
-                    icon: Icons.attach_money,
-                    color: const Color(0xFFC7A76D),
-                  ),
-                  const SizedBox(width: 15),
-                  _buildSummaryBox(
-                    label: 'Disputed Orders',
-                    value: '3',
-                    icon: Icons.error_outline,
-                    color: const Color(0xFFD32F2F),
-                    isAlert: true,
-                  ),
-                ],
+            summaryAsync.when(
+              loading: () => _buildSummaryBox(
+                label: 'Total in Escrow',
+                value: 'Loading…',
+                icon: Icons.attach_money,
+                color: const Color(0xFFC7A76D),
+              ),
+              error: (e, _) => _buildSummaryBox(
+                label: 'Total in Escrow',
+                value: 'Error',
+                icon: Icons.attach_money,
+                color: const Color(0xFFC7A76D),
+              ),
+              data: (s) => _buildSummaryBox(
+                label: 'Total in Escrow',
+                value: '\$${s.totalInEscrow.toStringAsFixed(2)}',
+                icon: Icons.attach_money,
+                color: const Color(0xFFC7A76D),
               ),
             ),
+            const SizedBox(height: 15),
+            summaryAsync.when(
+              loading: () => _buildSummaryBox(
+                label: 'Disputed Orders',
+                value: 'Loading…',
+                icon: Icons.error_outline,
+                color: const Color(0xFFD32F2F),
+                isAlert: true,
+              ),
+              error: (e, _) => _buildSummaryBox(
+                label: 'Disputed Orders',
+                value: 'Error',
+                icon: Icons.error_outline,
+                color: const Color(0xFFD32F2F),
+                isAlert: true,
+              ),
+              data: (s) => _buildSummaryBox(
+                label: 'Disputed Orders',
+                value: '${s.disputedOrders}',
+                icon: Icons.error_outline,
+                color: const Color(0xFFD32F2F),
+                isAlert: true,
+              ),
+            ),
+            const SizedBox(height: 20),
 
-            // Orders List
-            ListView(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                _buildPaymentCard(
-                  orderId: 'ORD-1234',
-                  service: 'House Cleaning',
-                  customer: 'John D.',
-                  freelancer: 'Sarah Johnson',
-                  amount: '\$47.25',
-                  status: 'completed',
-                  escrowStatus: 'Escrow: held',
-                  date: 'Apr 23, 2026',
-                  actionButton: ElevatedButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.attach_money, size: 18),
-                    label: const Text('Release Payment to Freelancer'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFC7A76D),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                  ),
+            ordersAsync.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 40),
+                  child: CircularProgressIndicator(),
                 ),
-                _buildPaymentCard(
-                  orderId: 'ORD-1235',
-                  service: 'Laptop Repair',
-                  customer: 'Lisa M.',
-                  freelancer: 'Mike Chen',
-                  amount: '\$62.25',
-                  status: 'in-progress',
-                  escrowStatus: 'Escrow: held',
-                  date: 'Apr 23, 2026',
-                ),
-                _buildPaymentCard(
-                  orderId: 'ORD-1236',
-                  service: 'Hair Styling',
-                  customer: 'Robert K.',
-                  freelancer: 'Emma Rodriguez',
-                  amount: '\$37.00',
-                  status: 'completed',
-                  escrowStatus: 'Escrow: released',
-                  date: 'Apr 22, 2026',
-                  isSuccess: true,
-                ),
-                _buildPaymentCard(
-                  orderId: 'ORD-1237',
-                  service: 'Plumbing',
-                  customer: 'Anna S.',
-                  freelancer: 'David Williams',
-                  amount: '\$82.50',
-                  status: 'disputed',
-                  escrowStatus: 'Escrow: disputed',
-                  date: 'Apr 21, 2026',
-                  isDisputed: true,
-                  disputeBox: Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.symmetric(vertical: 15),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFEBEE),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      'Payment dispute requires resolution',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 13,
-                        color: Color(0xFFD32F2F),
-                      ),
-                    ),
-                  ),
-                  multiActions: Row(
-                    children: [
-                      Expanded(
-                        child: _buildSecondaryButton('Refund Customer', onPressed: () {}),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildPrimaryButton('Release to Freelancer', onPressed: () {}),
-                      ),
+              ),
+              error: (e, _) => _ErrorBox(
+                message: e.toString(),
+                onRetry: () => ref.invalidate(adminOrdersProvider),
+              ),
+              data: (orders) {
+                if (orders.isEmpty) {
+                  return const _EmptyBox(
+                    title: 'No orders yet',
+                    subtitle: 'When users place orders, they will appear here.',
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final o in orders) ...[
+                      _buildOrderCard(o),
+                      const SizedBox(height: 12),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 30),
-              ],
+                    const SizedBox(height: 10),
+                  ],
+                );
+              },
             ),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildOrderCard(AdminOrderModel o) {
+    final created = o.createdAt == null ? '—' : _formatDate(o.createdAt!);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Order ${o.id}',
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF3E2723),
+                ),
+              ),
+              Text(
+                '\$${o.amount.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFDCC196),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              _buildStatusBadge(o.status),
+              const SizedBox(width: 10),
+              _buildEscrowBadge('Payment: ${o.paymentStatus}', o.paymentStatus == 'released', false),
+              const Spacer(),
+              Text(
+                created,
+                style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Gig: ${o.gigId}',
+            style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _formatDate(DateTime dt) {
+    final y = dt.year.toString().padLeft(4, '0');
+    final m = dt.month.toString().padLeft(2, '0');
+    final d = dt.day.toString().padLeft(2, '0');
+    return '$y-$m-$d';
   }
 
   Widget _buildSummaryBox({
@@ -257,7 +300,7 @@ class AdminOrdersPaymentsScreen extends StatelessWidget {
                Text(date, style: const TextStyle(fontFamily: 'Poppins', fontSize: 12, color: Colors.grey)),
             ],
           ),
-          ?disputeBox,
+          if (disputeBox != null) disputeBox,
           if (actionButton != null) ...[
             const SizedBox(height: 15),
             SizedBox(width: double.infinity, child: actionButton),
@@ -337,6 +380,82 @@ class AdminOrdersPaymentsScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14),
       ),
       child: Text(text, style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, fontWeight: FontWeight.w600)),
+    );
+  }
+}
+
+class _EmptyBox extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _EmptyBox({required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF3E2723),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorBox extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorBox({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Failed to load orders',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF3E2723),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: const TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.grey),
+          ),
+          const SizedBox(height: 12),
+          ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
     );
   }
 }

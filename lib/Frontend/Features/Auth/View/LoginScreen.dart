@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
 import 'package:near_me/Frontend/Views/CustomerMainScreen.dart';
+import 'package:near_me/Frontend/Views/FreelancerDashboardScreen.dart';
 import 'SignupScreen.dart';
 import '../../../Theme/app_colors.dart';
 import '../../../Components/custom_textfield.dart';
@@ -32,23 +33,33 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authprovider);
+    final loginState = ref.watch(authprovider);
+
+    ref.listen(authprovider, (prev, next) {
+      if (next is AsyncError) {
+        String msg = next.error.toString().replaceAll('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    });
 
     ref.listen(authprovider, (prev, next) {
       next.whenData((user) {
         if (user != null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => CustomerMainScreen()),
-          );
+          if (user.role == 'freelancer') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const FreelancerDashboardScreen(),
+              ),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => CustomerMainScreen()),
+            );
+          }
         }
       });
-
-      if (next is AsyncError) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.error.toString())));
-      }
     });
 
     return Scaffold(
@@ -194,36 +205,15 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
 
               const SizedBox(height: 32),
 
-              authState.when(
-                data: (token) {
-                  return CustomPrimaryButton(
-                    label: 'Sign In',
-                    onPressed: () {
-                      ref
-                          .read(authprovider.notifier)
-                          .login(
-                            emailController.text.trim(),
-                            passwordController.text.trim(),
-                          );
-                    },
-                  );
-                },
-
-                loading: () => const Center(child: CircularProgressIndicator()),
-
-                error: (e, _) => Column(
+              if (loginState.isLoading)
+                const Center(child: CircularProgressIndicator())
+              else
+                Column(
                   children: [
-                    Text(
-                      e.toString(),
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                    const SizedBox(height: 10),
                     CustomPrimaryButton(
-                      label: 'Retry',
+                      label: 'Sign In',
                       onPressed: () {
-                        ref
-                            .read(authprovider.notifier)
-                            .login(
+                        ref.read(authprovider.notifier).login(
                               emailController.text.trim(),
                               passwordController.text.trim(),
                             );
@@ -231,7 +221,6 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
                     ),
                   ],
                 ),
-              ),
 
               const SizedBox(height: 40),
 

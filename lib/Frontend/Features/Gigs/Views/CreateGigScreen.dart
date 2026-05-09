@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 import '../../../Components/custom_textfield.dart';
 import '../../../Components/custom_button.dart';
 import '../../../Theme/app_colors.dart';
 import '../../Auth/ViewModel/authViewModel.dart';
+import '../../../Media/ViewModel/media_upload_provider.dart';
 import '../Repository/GigRepo.dart';
 import '../viewModel/viewModel.dart';
 
@@ -27,6 +30,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
   String? _locationStatus;
   double? _latitude;
   double? _longitude;
+  final List<File> _selectedImages = [];
 
   final _categories = [
     'Cleaning',
@@ -149,6 +153,16 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
     setState(() => _isSubmitting = true);
 
     try {
+      // 0. Upload images (if any) to Cloudinary via backend
+      final uploadedUrls = <String>[];
+      if (_selectedImages.isNotEmpty) {
+        final uploader = ref.read(mediaUploadControllerProvider.notifier);
+        for (final img in _selectedImages) {
+          final res = await uploader.upload(file: img, folder: 'gigs');
+          uploadedUrls.add(res.url);
+        }
+      }
+
       // 1. Save the freelancer's GPS location to their user profile
       //    This is CRITICAL for the $geoNear search to find them
       await _repo.updateFreelancerLocation(
@@ -163,6 +177,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
         price: price,
         category: _selectedCategory,
         freelancerId: user.id ?? '',
+        images: uploadedUrls,
       );
 
       if (!mounted) return;
@@ -185,6 +200,21 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
     }
   }
 
+  Future<void> _pickGigImages() async {
+    try {
+      final picker = ImagePicker();
+      final images = await picker.pickMultiImage(imageQuality: 85);
+      if (!mounted) return;
+      if (images.isEmpty) return;
+
+      setState(() {
+        _selectedImages.addAll(images.map((x) => File(x.path)));
+      });
+    } catch (e) {
+      _showError('Could not pick images: $e');
+    }
+  }
+
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -196,6 +226,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final uploadState = ref.watch(mediaUploadControllerProvider);
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8F6),
       appBar: AppBar(
@@ -238,6 +269,71 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Images
+                  const Text(
+                    'Gig Images (optional)',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: _isSubmitting ? null : _pickGigImages,
+                        icon: const Icon(Icons.photo_library_outlined, size: 18),
+                        label: const Text('Pick images'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF3E5D8),
+                          foregroundColor: const Color(0xFF3E2723),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '${_selectedImages.length} selected',
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (uploadState.isLoading) ...[
+                    const SizedBox(height: 10),
+                    const LinearProgressIndicator(minHeight: 2),
+                  ],
+                  if (_selectedImages.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 70,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _selectedImages.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 10),
+                        itemBuilder: (context, i) {
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.file(
+                              _selectedImages[i],
+                              width: 70,
+                              height: 70,
+                              fit: BoxFit.cover,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+
                   // Title
                   CustomTextField(
                     label: 'Gig Title',

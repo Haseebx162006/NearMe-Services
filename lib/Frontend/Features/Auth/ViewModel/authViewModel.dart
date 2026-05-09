@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:near_me/Frontend/Features/Search/Repository/SearchRepo.dart';
 import 'package:near_me/Frontend/Features/Auth/Model/UserModel.dart';
 import 'package:near_me/Frontend/Features/Auth/Repository/AuthRepo.dart';
-import 'package:riverpod/riverpod.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final authprovider = AsyncNotifierProvider<Authviewmodel, UserModel?>(
   Authviewmodel.new,
@@ -26,27 +27,25 @@ class Authviewmodel extends AsyncNotifier<UserModel?> {
 
   Future<void> login(String email, String password) async {
     state = const AsyncLoading();
-
     state = await AsyncValue.guard(() async {
       final token = await _repo.login(email, password);
-      if (token != null) {
-        await _detectAndSaveLocation();
-        return await _repo.getUserData();
+      if (token == null) {
+        throw Exception("Login failed");
       }
-      return null;
+      await _detectAndSaveLocation();
+      return await _repo.getUserData();
     });
   }
 
   Future<void> signup(UserModel user) async {
     state = const AsyncLoading();
-
     state = await AsyncValue.guard(() async {
       final token = await _repo.signup(user);
-      if (token != null) {
-        await _detectAndSaveLocation();
-        return await _repo.getUserData();
+      if (token == null) {
+        throw Exception("Signup failed");
       }
-      return null;
+      await _detectAndSaveLocation();
+      return await _repo.getUserData();
     });
   }
 

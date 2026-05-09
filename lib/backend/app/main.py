@@ -8,6 +8,7 @@ from routes.admin_routes import router as admin_router
 from routes.payment_routes import router as payment_router
 from routes.search_routes import router as search_router
 from routes.analytics_routes import router as analytics_router
+from routes.media_routes import router as media_router
 from Service.search_service import SearchService
 from task_queue.AcceptanceQueue import process_order_acceptance_worker
 
@@ -40,6 +41,7 @@ app.include_router(admin_router)
 app.include_router(payment_router)
 app.include_router(search_router)
 app.include_router(analytics_router)
+app.include_router(media_router)
 
 @app.get('/')
 def greet():

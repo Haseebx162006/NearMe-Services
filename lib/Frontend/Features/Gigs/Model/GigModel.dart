@@ -8,6 +8,7 @@ class GigModel {
   final List<String> images;
   final double rating;
   final bool isActive;
+  final String moderationStatus;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -21,6 +22,7 @@ class GigModel {
     this.images = const [],
     this.rating = 0.0,
     this.isActive = true,
+    this.moderationStatus = 'approved',
     required this.createdAt,
     this.updatedAt,
   });
@@ -36,6 +38,7 @@ class GigModel {
       images: List<String>.from(json['images'] ?? []),
       rating: (json['rating'] ?? 0.0).toDouble(),
       isActive: json['is_active'] ?? true,
+      moderationStatus: (json['moderation_status'] ?? 'approved').toString(),
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
@@ -51,6 +54,7 @@ class GigModel {
       'category': category,
       'images': images,
       'is_active': isActive,
+      'moderation_status': moderationStatus,
     };
   }
 }

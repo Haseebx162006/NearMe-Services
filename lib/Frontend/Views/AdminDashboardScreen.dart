@@ -1,189 +1,133 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:near_me/Frontend/Admin/ViewModel/admin_providers.dart';
 
-class AdminDashboardScreen extends StatelessWidget {
+class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dashboardAsync = ref.watch(adminDashboardProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8F6),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              const Text(
-                'Admin Dashboard',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF3E2723),
-                ),
-              ),
-              const Text(
-                'NearMe Services Platform',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // Primary KPI Grid
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                childAspectRatio: 1.3,
-                children: [
-                  _buildKpiCard(
-                    'Total Users',
-                    '12,450',
-                    const Color(0xFF4E342E),
-                    Colors.white,
-                    Icons.people_outline,
-                  ),
-                  _buildKpiCard(
-                    'Active Gigs',
-                    '2,340',
-                    const Color(0xFFC7A76D),
-                    Colors.white,
-                    Icons.work_outline,
-                  ),
-                  _buildKpiCard(
-                    'Orders Today',
-                    '156',
-                    const Color(0xFFF3E5D8),
-                    const Color(0xFF3E2723),
-                    Icons.shopping_bag_outlined,
-                  ),
-                  _buildKpiCard(
-                    'Revenue',
-                    '\$45,890',
-                    const Color(0xFFDCC196),
-                    const Color(0xFF3E2723),
-                    Icons.attach_money,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 15),
-
-              // Secondary Metrics Grid
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                childAspectRatio: 1.8,
-                children: [
-                  _buildMetricCard(
-                    'Pending Gigs',
-                    '23',
-                    const Color(0xFFC7A76D),
-                  ),
-                  _buildMetricCard(
-                    'Growth (30d)',
-                    '+18%',
-                    const Color(0xFFC7A76D),
-                  ),
-                  _buildMetricCard(
-                    'Avg Order Value',
-                    '\$52',
-                    const Color(0xFFC7A76D),
-                  ),
-                  _buildMetricCard(
-                    'Platform Fee',
-                    '\$2,295',
-                    const Color(0xFFC7A76D),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              // Shortcut Navigation
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 15,
-                mainAxisSpacing: 15,
-                childAspectRatio: 1.8,
-                children: [
-                  _buildShortcutCard(
-                    'Users',
-                    'Manage accounts',
-                    Icons.people_outline,
-                  ),
-                  _buildShortcutCard(
-                    'Gigs',
-                    'Review & moderate',
-                    Icons.work_outline,
-                  ),
-                  _buildShortcutCard(
-                    'Orders',
-                    'Track transactions',
-                    Icons.shopping_bag_outlined,
-                  ),
-                  _buildShortcutCard(
-                    'Analytics',
-                    'View insights',
-                    Icons.trending_up,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 30),
-
-              // Recent Activity Section
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(25),
-                ),
+        child: dashboardAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => _ErrorState(
+            message: e.toString(),
+            onRetry: () => ref.invalidate(adminDashboardProvider),
+          ),
+          data: (dashboard) {
+            return RefreshIndicator(
+              onRefresh: () async => ref.refresh(adminDashboardProvider.future),
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Recent Activity',
+                      'Admin Dashboard',
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        fontSize: 18,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF3E2723),
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    _buildActivityItem(
-                      'New user registered:',
-                      'john@example.com',
-                      '2 min ago',
+                    const Text(
+                      'NearMe Services Platform',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
                     ),
-                    _buildActivityItem(
-                      'Gig pending approval:',
-                      '\'Expert Plumbing\'',
-                      '15 min ago',
+                    const SizedBox(height: 30),
+
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 15,
+                      mainAxisSpacing: 15,
+                      childAspectRatio: 1.3,
+                      children: [
+                        _buildKpiCard(
+                          'Total Users',
+                          '${dashboard.totalUsers}',
+                          const Color(0xFF4E342E),
+                          Colors.white,
+                          Icons.people_outline,
+                        ),
+                        _buildKpiCard(
+                          'Total Gigs',
+                          '${dashboard.totalGigs}',
+                          const Color(0xFFC7A76D),
+                          Colors.white,
+                          Icons.work_outline,
+                        ),
+                        _buildKpiCard(
+                          'Total Orders',
+                          dashboard.totalOrders == 0 ? '—' : '${dashboard.totalOrders}',
+                          const Color(0xFFF3E5D8),
+                          const Color(0xFF3E2723),
+                          Icons.shopping_bag_outlined,
+                        ),
+                        _buildKpiCard(
+                          'Revenue',
+                          dashboard.totalRevenue == 0 ? '—' : '\$${dashboard.totalRevenue.toStringAsFixed(2)}',
+                          const Color(0xFFDCC196),
+                          const Color(0xFF3E2723),
+                          Icons.attach_money,
+                        ),
+                      ],
                     ),
-                    _buildActivityItem(
-                      'Order #1234 completed successfully',
-                      '',
-                      '32 min ago',
+
+                    const SizedBox(height: 30),
+
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Recent Activity',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF3E2723),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          if (dashboard.recentActivity.isEmpty)
+                            const Text(
+                              'No recent activity available.',
+                              style: TextStyle(fontFamily: 'Poppins', fontSize: 13, color: Colors.grey),
+                            )
+                          else
+                            ...dashboard.recentActivity.map(
+                              (a) => _buildActivityItem(
+                                a.title,
+                                a.detail ?? '',
+                                a.timeLabel ?? '',
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(height: 30),
                   ],
                 ),
               ),
-              const SizedBox(height: 30),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -361,6 +305,39 @@ class AdminDashboardScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: Colors.red),
+            const SizedBox(height: 10),
+            Text(
+              'Failed to load dashboard.\n$message',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontFamily: 'Poppins'),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: onRetry,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }

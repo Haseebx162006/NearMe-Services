@@ -13,7 +13,7 @@ class GigRepository {
       final response = await _dio.get(
         '/gigs/',
         queryParameters: {
-          'sort_by': ?sortBy,
+          if (sortBy != null) 'sort_by': sortBy,
           'limit': limit,
         },
         options: Options(

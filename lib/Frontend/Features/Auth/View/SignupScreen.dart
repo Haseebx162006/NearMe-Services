@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:near_me/Frontend/Features/Auth/Model/UserModel.dart';
 import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
 import 'package:near_me/Frontend/Views/CustomerMainScreen.dart';
+import 'package:near_me/Frontend/Views/FreelancerDashboardScreen.dart';
 import 'LoginScreen.dart';
 import '../../../Theme/app_colors.dart';
 import '../../../Components/custom_textfield.dart';
@@ -37,27 +38,32 @@ class _SignupscreenState extends ConsumerState<Signupscreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authprovider);
+    final signupState = ref.watch(authprovider);
+
+    ref.listen(authprovider, (prev, next) {
+      if (next is AsyncError) {
+        String msg = next.error.toString().replaceAll('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      }
+    });
 
     ref.listen(authprovider, (prev, next) {
       next.whenData((user) {
         if (user != null) {
-          // Navigate to home after successful signup based on role or fallback to customer main screen
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CustomerMainScreen(),
-            ), // Or a role-based router
-          );
+          // Navigate to home after successful signup based on role
+          if (user.role == 'freelancer') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const FreelancerDashboardScreen()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => CustomerMainScreen()),
+            );
+          }
         }
       });
-
-      // Show error Snackbar if signup fails
-      if (next is AsyncError) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(next.error.toString())));
-      }
     });
 
     return Scaffold(
@@ -303,81 +309,67 @@ class _SignupscreenState extends ConsumerState<Signupscreen> {
               ),
               const SizedBox(height: 32),
 
-              // Create Account Button
-              authState.when(
-                data: (_) => CustomPrimaryButton(
-                  label: 'Create Account',
-                  onPressed: () {
-                    // --- Input Validation ---
-                    final name = nameController.text.trim();
-                    final email = emailController.text.trim();
-                    final phone = phoneController.text.trim();
-                    final password = passwordController.text.trim();
-
-                    if (name.isEmpty ||
-                        email.isEmpty ||
-                        phone.isEmpty ||
-                        password.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please fill in all fields'),
-                        ),
-                      );
-                      return;
-                    }
-
-                    if (password.length < 6) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Password must be at least 6 characters',
-                          ),
-                        ),
-                      );
-                      return;
-                    }
-
-                    if (!_agreedToTerms) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please agree to terms')),
-                      );
-                      return;
-                    }
-
-                    // Create User Object for signup
-                    // location is null — we don't have the user's location yet
-                    final newUser = UserModel(
-                      name: name,
-                      email: email,
-                      password: password,
-                      phoneNumber: phone,
-                      role: _selectedRole,
-                      createdAt: DateTime.now(),
-                      skills: [],
-                      location: null, // No dummy placeholder
-                    );
-
-                    ref.read(authprovider.notifier).signup(newUser);
-                  },
-                ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Column(
+              if (signupState.isLoading)
+                const Center(child: CircularProgressIndicator())
+              else
+                Column(
                   children: [
-                    Text(
-                      e.toString().replaceAll('Exception: ', ''),
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                    const SizedBox(height: 10),
                     CustomPrimaryButton(
-                      label: 'Try Again',
+                      label: 'Create Account',
                       onPressed: () {
-                        // Reset state so the form goes back to normal
-                        ref.read(authprovider.notifier).resetState();
+                        // --- Input Validation ---
+                        final name = nameController.text.trim();
+                        final email = emailController.text.trim();
+                        final phone = phoneController.text.trim();
+                        final password = passwordController.text.trim();
+
+                        if (name.isEmpty ||
+                            email.isEmpty ||
+                            phone.isEmpty ||
+                            password.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Please fill in all fields'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (password.length < 6) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Password must be at least 6 characters',
+                              ),
+                            ),
+                          );
+                          return;
+                        }
+
+                        if (!_agreedToTerms) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please agree to terms')),
+                          );
+                          return;
+                        }
+
+                        // Create User Object for signup
+                        final newUser = UserModel(
+                          name: name,
+                          email: email,
+                          password: password,
+                          phoneNumber: phone,
+                          role: _selectedRole,
+                          createdAt: DateTime.now(),
+                          skills: [],
+                          location: null,
+                        );
+
+                        ref.read(authprovider.notifier).signup(newUser);
                       },
                     ),
                   ],
                 ),
-              ),
               const SizedBox(height: 40),
 
               // Divider

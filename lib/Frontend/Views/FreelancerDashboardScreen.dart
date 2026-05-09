@@ -1,41 +1,121 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../Features/Auth/ViewModel/authViewModel.dart';
+import '../Features/analytics/analytics_provider.dart';
 
+import '../Features/Gigs/Views/FreelancerGigsScreen.dart';
+import '../Features/Orders/Views/CustomerOrderHistoryScreen.dart'; // optional placeholder
 
-class FreelancerDashboardScreen extends StatelessWidget {
+class FreelancerDashboardScreen extends ConsumerStatefulWidget {
   const FreelancerDashboardScreen({super.key});
+
+  @override
+  ConsumerState<FreelancerDashboardScreen> createState() =>
+      _FreelancerDashboardScreenState();
+}
+
+class _FreelancerDashboardScreenState
+    extends ConsumerState<FreelancerDashboardScreen> {
+  int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8F6),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              const Text(
-                'Dashboard',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF3E2723), // Dark brown from reference
-                ),
-              ),
-              const Text(
-                'Welcome back, Sarah!',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(height: 30),
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          _buildDashboardTab(context, ref),
+          const FreelancerGigsScreen(),
+          const Scaffold(
+            body: Center(child: Text("Orders - Pending Integration")),
+          ),
+          const Scaffold(
+            body: Center(child: Text("Messages - Pending Integration")),
+          ),
+          const Scaffold(
+            body: Center(child: Text("Analyse - Pending Integration")),
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF4E342E),
+        unselectedItemColor: Colors.grey,
+        selectedLabelStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 12,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: 'Poppins',
+          fontSize: 12,
+        ),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.grid_view),
+            label: 'Dashboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.work_outline),
+            label: 'Gigs',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_bag_outlined),
+            label: 'Orders',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: 'Messages',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.bar_chart),
+            label: 'Analyse',
+          ),
+        ],
+      ),
+    );
+  }
 
-              // Summary Grid
-              GridView.count(
+  Widget _buildDashboardTab(BuildContext context, WidgetRef ref) {
+    final userState = ref.watch(authprovider);
+    final userName = userState.value?.name ?? 'Freelancer';
+    final analyticsState = ref.watch(analyticsProvider);
+
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            const Text(
+              'Dashboard',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF3E2723), // Dark brown from reference
+              ),
+            ),
+            Text(
+              'Welcome back, $userName!',
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            // Summary Grid
+            analyticsState.when(
+              data: (analytics) => GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 crossAxisCount: 2,
@@ -43,145 +123,180 @@ class FreelancerDashboardScreen extends StatelessWidget {
                 mainAxisSpacing: 15,
                 childAspectRatio: 1.2,
                 children: [
-                   _buildSummaryCard(
+                  _buildSummaryCard(
                     icon: Icons.attach_money,
                     label: 'Total Earnings',
-                    value: '\$2,450',
+                    value: '\$${analytics.totalEarnings.toStringAsFixed(0)}',
                     color: const Color(0xFFC7A76D), // Gold/Mustard
                     textColor: Colors.white,
                   ),
                   _buildSummaryCard(
                     icon: Icons.shopping_bag_outlined,
-                    label: 'Active Orders',
-                    value: '5',
+                    label: 'Total Orders',
+                    value: '${analytics.totalOrders}',
                     color: const Color(0xFF4E342E), // Dark Brown
                     textColor: Colors.white,
                   ),
                   _buildSummaryCard(
                     icon: Icons.trending_up,
                     label: 'This Month',
-                    value: '\$890',
+                    value: '\$${analytics.monthEarnings.toStringAsFixed(0)}',
                     color: const Color(0xFFF3E5D8), // Light Beige
                     textColor: const Color(0xFF4E342E),
                   ),
                   _buildSummaryCard(
                     icon: Icons.access_time,
                     label: 'Pending',
-                    value: '2',
+                    value: '${analytics.pendingOrders}',
                     color: const Color(0xFFF3E5D8), // Light Beige
                     textColor: const Color(0xFF4E342E),
                   ),
                 ],
               ),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: CircularProgressIndicator(color: Color(0xFF4E342E)),
+                ),
+              ),
+              error: (err, stack) => Center(
+                child: Text(
+                  'Failed to load stats',
+                  style: TextStyle(color: Colors.red),
+                ),
+              ),
+            ),
 
-              const SizedBox(height: 30),
-
-              // Recent Orders Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Recent Orders',
+            // Recent Orders Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Recent Orders',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF4E342E),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {},
+                  child: const Text(
+                    'View All',
                     style: TextStyle(
                       fontFamily: 'Poppins',
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF4E342E),
+                      color: Color(0xFFC7A76D),
                     ),
                   ),
-                  TextButton(
+                ),
+              ],
+            ),
+
+            // Recent Orders List
+            analyticsState.when(
+              data: (analytics) {
+                if (analytics.recentOrders.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: Text("No recent orders found.")),
+                  );
+                }
+                return Column(
+                  children: analytics.recentOrders.map((order) {
+                    Color statusColor;
+                    switch (order.status.toLowerCase()) {
+                      case 'completed':
+                        statusColor = const Color(0xFFE8F5E9);
+                        break;
+                      case 'scheduled':
+                      case 'pending':
+                        statusColor = const Color(0xFFF5E6D3);
+                        break;
+                      default:
+                        statusColor = const Color(0xFFFAF3E0);
+                    }
+                    return _buildOrderCard(
+                      order.customerName.isNotEmpty
+                          ? order.customerName
+                          : 'Customer',
+                      order.serviceName.isNotEmpty
+                          ? order.serviceName
+                          : 'Service',
+                      '\$${order.amount}',
+                      order.status,
+                      statusColor,
+                    );
+                  }).toList(),
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => const SizedBox(),
+            ),
+
+            const SizedBox(height: 20),
+
+            // Boost Visibility Banner
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4E342E), Color(0xFFC7A76D)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Boost Your Visibility',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Get featured in search results and attract more customers',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
                     onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: const Color(0xFF4E342E),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 30,
+                        vertical: 12,
+                      ),
+                    ),
                     child: const Text(
-                      'View All',
+                      'Upgrade Now',
                       style: TextStyle(
                         fontFamily: 'Poppins',
-                        color: Color(0xFFC7A76D),
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ],
               ),
-
-              // Recent Orders List
-              _buildOrderCard('John D.', 'House Cleaning', '\$45', 'In Progress', const Color(0xFFFAF3E0)),
-              _buildOrderCard('Lisa M.', 'House Cleaning', '\$45', 'Scheduled', const Color(0xFFF5E6D3)),
-              _buildOrderCard('Robert K.', 'House Cleaning', '\$45', 'Completed', const Color(0xFFE8F5E9)),
-
-              const SizedBox(height: 20),
-
-              // Boost Visibility Banner
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF4E342E), Color(0xFFC7A76D)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Boost Your Visibility',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Get featured in search results and attract more customers',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.7),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF4E342E),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                      ),
-                      child: const Text(
-                        'Upgrade Now',
-                        style: TextStyle(
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-            ],
-          ),
+            ),
+            const SizedBox(height: 30),
+          ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF4E342E),
-        unselectedItemColor: Colors.grey,
-        selectedLabelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12),
-        unselectedLabelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.work_outline), label: 'Gigs'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag_outlined), label: 'Orders'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Messages'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Analyse'),
-        ],
       ),
     );
   }
@@ -231,7 +346,13 @@ class FreelancerDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildOrderCard(String name, String service, String price, String status, Color statusColor) {
+  Widget _buildOrderCard(
+    String name,
+    String service,
+    String price,
+    String status,
+    Color statusColor,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(16),
@@ -271,7 +392,10 @@ class FreelancerDashboardScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor,
                   borderRadius: BorderRadius.circular(20),
@@ -281,7 +405,9 @@ class FreelancerDashboardScreen extends StatelessWidget {
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 11,
-                    color: status == 'Completed' ? Colors.green : const Color(0xFF8D6E63),
+                    color: status == 'Completed'
+                        ? Colors.green
+                        : const Color(0xFF8D6E63),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
