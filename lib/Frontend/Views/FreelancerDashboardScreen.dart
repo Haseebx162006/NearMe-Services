@@ -5,6 +5,7 @@ import '../Features/analytics/analytics_provider.dart';
 
 import '../Features/Gigs/Views/FreelancerGigsScreen.dart';
 import '../Features/Orders/Views/CustomerOrderHistoryScreen.dart'; // optional placeholder
+import '../Features/Auth/View/LoginScreen.dart'; // Ensure correct path
 
 class FreelancerDashboardScreen extends ConsumerStatefulWidget {
   const FreelancerDashboardScreen({super.key});
@@ -94,22 +95,54 @@ class _FreelancerDashboardScreenState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            const Text(
-              'Dashboard',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF3E2723), // Dark brown from reference
-              ),
-            ),
-            Text(
-              'Welcome back, $userName!',
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Dashboard',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF3E2723), // Dark brown from reference
+                      ),
+                    ),
+                    Text(
+                      'Welcome back, $userName!',
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    await ref.read(authprovider.notifier).logout();
+                    if (context.mounted) {
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => const Loginscreen()),
+                        (route) => false,
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.logout, size: 18),
+                  label: const Text('Log out'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4E342E),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 30),
 

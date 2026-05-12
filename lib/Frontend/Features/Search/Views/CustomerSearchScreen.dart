@@ -9,6 +9,8 @@ import 'package:geolocator/geolocator.dart';
 import '../../../Theme/app_colors.dart';
 import '../ViewModel/SearchViewModel.dart';
 import '../Model/NearbyGigModel.dart';
+import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
+import 'package:near_me/Frontend/Features/Orders/ViewModel/customer_order_provider.dart';
 
 class CustomerSearchScreen extends ConsumerStatefulWidget {
   const CustomerSearchScreen({super.key});
@@ -80,7 +82,9 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
       if (permission == LocationPermission.deniedForever) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(' Location permission permanently denied. Enable in Settings.'),
+            content: Text(
+              ' Location permission permanently denied. Enable in Settings.',
+            ),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 4),
           ),
@@ -99,13 +103,17 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
             timeLimit: Duration(seconds: 20),
           ),
         );
-        debugPrint('[GPS] getCurrentPosition: ${position.latitude}, ${position.longitude}');
+        debugPrint(
+          '[GPS] getCurrentPosition: ${position.latitude}, ${position.longitude}',
+        );
       } catch (e) {
         debugPrint('[GPS] getCurrentPosition failed: $e');
         // 4. Fallback: try last known position
         try {
           position = await Geolocator.getLastKnownPosition();
-          debugPrint('[GPS] getLastKnownPosition: ${position?.latitude}, ${position?.longitude}');
+          debugPrint(
+            '[GPS] getLastKnownPosition: ${position?.latitude}, ${position?.longitude}',
+          );
         } catch (e2) {
           debugPrint('[GPS] getLastKnownPosition also failed: $e2');
         }
@@ -122,7 +130,9 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
 
         // Move map to the REAL position
         _mapController.move(_userPosition, 14.0);
-        debugPrint('[GPS]  Using real GPS: ${position.latitude}, ${position.longitude}');
+        debugPrint(
+          '[GPS]  Using real GPS: ${position.latitude}, ${position.longitude}',
+        );
       } else {
         // GPS completely failed — show warning and use default
         setState(() => _isLocating = false);
@@ -133,7 +143,9 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
             duration: Duration(seconds: 3),
           ),
         );
-        debugPrint('[GPS]  All GPS methods failed, using default Lahore coords');
+        debugPrint(
+          '[GPS]  All GPS methods failed, using default Lahore coords',
+        );
       }
 
       // Search with whatever position we have
@@ -148,10 +160,9 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
 
   void _searchWithCurrentPosition() {
     if (!mounted) return;
-    ref.read(searchProvider.notifier).initWithLocation(
-          _userPosition.latitude,
-          _userPosition.longitude,
-        );
+    ref
+        .read(searchProvider.notifier)
+        .initWithLocation(_userPosition.latitude, _userPosition.longitude);
   }
 
   @override
@@ -173,8 +184,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
               children: [
                 // OpenStreetMap tile layer (FREE, no API key)
                 TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.nearme.app',
                 ),
 
@@ -207,8 +217,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                           border: Border.all(color: Colors.white, width: 3),
                           boxShadow: [
                             BoxShadow(
-                              color:
-                                  const Color(0xFF4A49E2).withOpacity(0.4),
+                              color: const Color(0xFF4A49E2).withOpacity(0.4),
                               blurRadius: 10,
                               spreadRadius: 3,
                             ),
@@ -219,7 +228,6 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
 
                     // Freelancer gig markers from search results
                     ...searchState.gigs.map((gig) {
-                      
                       final markerPos = _estimateGigPosition(gig);
                       final initials = _getInitials(gig.title);
 
@@ -250,7 +258,10 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
               right: 0,
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
@@ -265,7 +276,8 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       SizedBox(
-                        width: 16, height: 16,
+                        width: 16,
+                        height: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           color: Color(0xFF4A49E2),
@@ -310,17 +322,18 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                     child: TextField(
                       controller: _searchController,
                       onChanged: (value) {
-                        ref
-                            .read(searchProvider.notifier)
-                            .setSearchQuery(value);
+                        ref.read(searchProvider.notifier).setSearchQuery(value);
                       },
                       style: const TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 14,
                       ),
                       decoration: const InputDecoration(
-                        icon: Icon(Icons.search,
-                            color: AppColors.textHint, size: 20),
+                        icon: Icon(
+                          Icons.search,
+                          color: AppColors.textHint,
+                          size: 20,
+                        ),
                         hintText: 'Search freelancers or skills...',
                         hintStyle: TextStyle(
                           fontFamily: 'Poppins',
@@ -328,8 +341,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                           fontSize: 14,
                         ),
                         border: InputBorder.none,
-                        contentPadding:
-                            EdgeInsets.symmetric(vertical: 14),
+                        contentPadding: EdgeInsets.symmetric(vertical: 14),
                       ),
                     ),
                   ),
@@ -361,7 +373,6 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
             ),
           ),
 
-          
           Positioned(
             right: 20,
             bottom: 220,
@@ -400,7 +411,9 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
               child: Center(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 10),
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
@@ -452,8 +465,11 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline,
-                        color: Colors.red.shade400, size: 20),
+                    Icon(
+                      Icons.error_outline,
+                      color: Colors.red.shade400,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -518,8 +534,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                       activeTrackColor: const Color(0xFFBCA073),
                       inactiveTrackColor: const Color(0xFFF3E5D8),
                       thumbColor: const Color(0xFFBCA073),
-                      overlayColor:
-                          const Color(0xFFBCA073).withOpacity(0.2),
+                      overlayColor: const Color(0xFFBCA073).withOpacity(0.2),
                       trackHeight: 4,
                     ),
                     child: Slider(
@@ -528,13 +543,13 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                       max: 1000,
                       onChanged: (val) {
                         ref.read(searchProvider.notifier).setRadius(val);
-                        
+
                         // Automatically adjust map zoom so the circle stays in view
                         // Formula: Zoom level drops by 1 every time radius doubles
                         double targetZoom = 14.5 - (log(val) / ln2);
                         // Clamp between min and max zoom
                         targetZoom = targetZoom.clamp(4.0, 18.0);
-                        
+
                         _mapController.move(_userPosition, targetZoom);
                       },
                     ),
@@ -552,8 +567,11 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.circle,
-                              size: 8, color: Color(0xFFBCA073)),
+                          const Icon(
+                            Icons.circle,
+                            size: 8,
+                            color: Color(0xFFBCA073),
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '${searchState.response?.uniqueFreelancers ?? 0} freelancers found',
@@ -596,8 +614,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
 
     // Spread markers evenly in a circle
     final angle = (index / totalGigs) * 2 * 3.14159;
-    final distanceDeg =
-        gig.distanceKm / 111.0; // rough km-to-degree conversion
+    final distanceDeg = gig.distanceKm / 111.0; // rough km-to-degree conversion
 
     return LatLng(
       _userPosition.latitude + distanceDeg * sin(angle),
@@ -611,7 +628,9 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
     if (words.length >= 2) {
       return '${words[0][0]}${words[1][0]}'.toUpperCase();
     }
-    return title.substring(0, title.length >= 2 ? 2 : title.length).toUpperCase();
+    return title
+        .substring(0, title.length >= 2 ? 2 : title.length)
+        .toUpperCase();
   }
 
   /// Shows a bottom sheet with gig details when a marker is tapped.
@@ -657,7 +676,9 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFBCA073).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -716,19 +737,21 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    // TODO: Navigate to gig detail or booking screen
+                    _showOrderDialog(gig);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4E342E),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: const Text(
-                    'View Details',
+                    'Order Now',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
@@ -742,6 +765,128 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _showOrderDialog(NearbyGigModel gig) async {
+    final requirementsController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        bool isSubmitting = false;
+
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: Text('Order ${gig.title}'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Price: \$${gig.price.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF4E342E),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Requirements (optional)',
+                      style: TextStyle(fontFamily: 'Poppins'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: requirementsController,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        hintText: 'Write any extra details for the freelancer',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          final user = ref.read(authprovider).value;
+                          final customerId = user?.id;
+
+                          if (customerId == null || customerId.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please sign in again.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          setDialogState(() => isSubmitting = true);
+                          try {
+                            await ref
+                                .read(customerOrderProvider.notifier)
+                                .placeOrder(
+                                  gigId: gig.id,
+                                  freelancerId: gig.freelancerId,
+                                  customerId: customerId,
+                                  amount: gig.price,
+                                  requirements: requirementsController.text
+                                      .trim(),
+                                );
+
+                            if (!mounted) return;
+                            Navigator.pop(dialogContext);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Order placed successfully!'),
+                                backgroundColor: Color(0xFF16A34A),
+                              ),
+                            );
+                          } catch (e) {
+                            if (!mounted) return;
+                            setDialogState(() => isSubmitting = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  e.toString().replaceAll('Exception: ', ''),
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4E342E),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Place Order'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    requirementsController.dispose();
   }
 
   /// Shows a filter sheet for category selection.
@@ -794,18 +939,19 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
               children: categories.map((cat) {
                 final isSelected =
                     ref.read(searchProvider).category == cat ||
-                        (cat == 'All' &&
-                            ref.read(searchProvider).category.isEmpty);
+                    (cat == 'All' && ref.read(searchProvider).category.isEmpty);
                 return GestureDetector(
                   onTap: () {
-                    ref.read(searchProvider.notifier).setCategory(
-                          cat == 'All' ? '' : cat,
-                        );
+                    ref
+                        .read(searchProvider.notifier)
+                        .setCategory(cat == 'All' ? '' : cat);
                     Navigator.pop(context);
                   },
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? const Color(0xFF4E342E)

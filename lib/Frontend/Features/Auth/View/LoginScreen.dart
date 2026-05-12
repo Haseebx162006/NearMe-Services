@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
 import 'package:near_me/Frontend/Views/CustomerMainScreen.dart';
 import 'package:near_me/Frontend/Views/FreelancerDashboardScreen.dart';
+import 'package:near_me/Frontend/Views/AdminDashboardScreen.dart';
 import 'SignupScreen.dart';
 import '../../../Theme/app_colors.dart';
 import '../../../Components/custom_textfield.dart';
@@ -38,14 +39,23 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
     ref.listen(authprovider, (prev, next) {
       if (next is AsyncError) {
         String msg = next.error.toString().replaceAll('Exception: ', '');
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     });
 
     ref.listen(authprovider, (prev, next) {
       next.whenData((user) {
         if (user != null) {
-          if (user.role == 'freelancer') {
+          if (user.role == 'admin') {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminDashboardScreen(),
+              ),
+            );
+          } else if (user.role == 'freelancer') {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -213,7 +223,9 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
                     CustomPrimaryButton(
                       label: 'Sign In',
                       onPressed: () {
-                        ref.read(authprovider.notifier).login(
+                        ref
+                            .read(authprovider.notifier)
+                            .login(
                               emailController.text.trim(),
                               passwordController.text.trim(),
                             );

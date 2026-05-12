@@ -1,10 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../Features/Orders/ViewModel/freelancer_orders_provider.dart';
 
-class FreelancerOrdersScreen extends StatelessWidget {
+class FreelancerOrdersScreen extends ConsumerStatefulWidget {
   const FreelancerOrdersScreen({super.key});
 
   @override
+  ConsumerState<FreelancerOrdersScreen> createState() =>
+      _FreelancerOrdersScreenState();
+}
+
+class _FreelancerOrdersScreenState
+    extends ConsumerState<FreelancerOrdersScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(
+      () => ref.read(freelancerOrdersProvider.notifier).refreshOrders(),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final ordersState = ref.watch(freelancerOrdersProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8F6),
       body: SafeArea(
@@ -16,8 +35,8 @@ class FreelancerOrdersScreen extends StatelessWidget {
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Text(
+                children: [
+                  const Text(
                     'Orders',
                     style: TextStyle(
                       fontFamily: 'Poppins',
@@ -26,12 +45,30 @@ class FreelancerOrdersScreen extends StatelessWidget {
                       color: Color(0xFF3E2723),
                     ),
                   ),
-                  Text(
+                  const Text(
                     'Manage your bookings',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 14,
                       color: Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      ref
+                          .read(freelancerOrdersProvider.notifier)
+                          .refreshOrders();
+                    },
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('Refresh'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4E342E),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                   ),
                 ],
@@ -40,107 +77,166 @@ class FreelancerOrdersScreen extends StatelessWidget {
 
             // Orders List
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                children: [
-                  _buildOrderCard(
-                    clientName: 'John D.',
-                    service: 'House Cleaning',
-                    dateTime: 'Apr 25, 2026 at 2:00 PM',
-                    amount: '\$45',
-                    requirements: '3-bedroom apartment, deep cleaning needed',
-                    status: 'Pending',
-                    statusColor: const Color(0xFFF3E5D8),
-                    statusTextColor: const Color(0xFFC7A76D),
-                    actions: Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.close, size: 18),
-                            label: const Text('Decline'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFD32F2F),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                          ),
+              child: ordersState.when(
+                data: (orders) {
+                  if (orders.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No orders yet',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: Colors.grey,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.check, size: 18),
-                            label: const Text('Accept'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFC7A76D),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  _buildOrderCard(
-                    clientName: 'Lisa M.',
-                    service: 'House Cleaning',
-                    dateTime: 'Apr 24, 2026 at 10:00 AM',
-                    amount: '\$45',
-                    requirements: 'Regular cleaning, 2-bedroom',
-                    status: 'Accepted',
-                    statusColor: const Color(0xFFE8F5E9),
-                    statusTextColor: Colors.green,
-                    actions: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4E342E),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: const Text('Mark as Completed', style: TextStyle(fontFamily: 'Poppins')),
                       ),
-                    ),
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    itemCount: orders.length,
+                    itemBuilder: (context, index) {
+                      final order = orders[index];
+                      final isPending = order.status == 'pending';
+                      final isAccepted = order.status == 'accepted';
+                      final isCompleted = order.status == 'completed';
+
+                      return _buildOrderCard(
+                        clientName:
+                            'Customer ${order.customerId.substring(0, 5)}',
+                        service: 'Gig ${order.gigId.substring(0, 5)}',
+                        dateTime: order.createdAt.toString(),
+                        amount: '\$${order.price.toStringAsFixed(2)}',
+                        requirements:
+                            order.description ?? 'No details provided',
+                        status: order.status.toUpperCase(),
+                        statusColor: isPending
+                            ? const Color(0xFFF3E5D8)
+                            : isAccepted
+                            ? const Color(0xFFE8F5E9)
+                            : const Color(0xFFF5E6D3),
+                        statusTextColor: isPending
+                            ? const Color(0xFFC7A76D)
+                            : isAccepted
+                            ? Colors.green
+                            : const Color(0xFF3E2723),
+                        actions: isPending
+                            ? Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Order declined (pending)',
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.close, size: 18),
+                                      label: const Text('Decline'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xFFD32F2F,
+                                        ),
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Order accepted (pending)',
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.check, size: 18),
+                                      label: const Text('Accept'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xFFC7A76D,
+                                        ),
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : isAccepted
+                            ? SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Order marked as completed',
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF4E342E),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Mark as Completed',
+                                    style: TextStyle(fontFamily: 'Poppins'),
+                                  ),
+                                ),
+                              )
+                            : null,
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF4E342E)),
+                ),
+                error: (err, stack) => Center(
+                  child: Text(
+                    'Error loading orders\n$err',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.red),
                   ),
-                  _buildOrderCard(
-                    clientName: 'Robert K.',
-                    service: 'House Cleaning',
-                    dateTime: 'Apr 23, 2026 at 3:00 PM',
-                    amount: '\$45',
-                    requirements: 'Move-out cleaning',
-                    status: 'Completed',
-                    statusColor: const Color(0xFFF5E6D3),
-                    statusTextColor: const Color(0xFF3E2723),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2, // Orders tab
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF4E342E),
-        unselectedItemColor: Colors.grey,
-        selectedLabelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12),
-        unselectedLabelStyle: const TextStyle(fontFamily: 'Poppins', fontSize: 12),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: 'Dashboard'),
-          BottomNavigationBarItem(icon: Icon(Icons.work_outline), label: 'Gigs'),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag_outlined), label: 'Orders'),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: 'Messages'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'Analyse'),
-        ],
       ),
     );
   }
@@ -199,7 +295,10 @@ class FreelancerOrdersScreen extends StatelessWidget {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusColor,
                   borderRadius: BorderRadius.circular(20),
@@ -252,10 +351,7 @@ class FreelancerOrdersScreen extends StatelessWidget {
               ],
             ),
           ),
-          if (actions != null) ...[
-            const SizedBox(height: 20),
-            actions,
-          ],
+          if (actions != null) ...[const SizedBox(height: 20), actions],
         ],
       ),
     );

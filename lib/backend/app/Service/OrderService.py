@@ -37,7 +37,13 @@ class OrderService:
     async def get_orders_by_user(self, user_id: str):
         # Logic to retrieve all orders for a specific user from the database
         
-        orders = await self.db.orders.find({"user_id": user_id}).to_list(length=100)
+        orders = await self.db.orders.find({
+            "$or": [
+                {"customer_id": user_id},
+                {"freelancer_id": user_id},
+                {"user_id": user_id},
+            ]
+        }).to_list(length=100)
         if not orders:
             raise HTTPException(status_code=404, detail="No orders found for this user")
         return [self._serialize_order(order) for order in orders]

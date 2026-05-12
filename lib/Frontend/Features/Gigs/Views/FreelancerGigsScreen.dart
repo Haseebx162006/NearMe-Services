@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:near_me/Frontend/Features/Gigs/viewModel/viewModel.dart';
 
+import 'CreateGigScreen.dart';
+
 class FreelancerGigsScreen extends ConsumerStatefulWidget {
   const FreelancerGigsScreen({super.key});
 
@@ -72,7 +74,15 @@ class _FreelancerGigsScreenState extends ConsumerState<FreelancerGigsScreen> {
                     ),
                     child: IconButton(
                       icon: const Icon(Icons.add, color: Colors.white),
-                      onPressed: () {},
+                      onPressed: () {
+                        // Navigate to CreateGigScreen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CreateGigScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -237,7 +247,12 @@ class _FreelancerGigsScreenState extends ConsumerState<FreelancerGigsScreen> {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    // Navigate to edit gig screen
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Edit feature coming soon')),
+                    );
+                  },
                   icon: const Icon(Icons.edit_outlined, size: 18),
                   label: const Text('Edit'),
                   style: ElevatedButton.styleFrom(
@@ -254,7 +269,35 @@ class _FreelancerGigsScreenState extends ConsumerState<FreelancerGigsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    // Show stats dialog
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Gig Statistics'),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Views: $views'),
+                            const SizedBox(height: 8),
+                            Text('Orders: $orders'),
+                            const SizedBox(height: 8),
+                            Text('Status: ${status == "Active" ? "✅ Active" : "❌ Inactive"}'),
+                          ],
+                        ),
+                        actions: [
+                          ElevatedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4E342E),
+                            ),
+                            child: const Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4E342E),
                     foregroundColor: Colors.white,

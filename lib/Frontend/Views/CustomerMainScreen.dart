@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
 import 'package:near_me/Frontend/Features/Gigs/Model/GigModel.dart';
 import 'package:near_me/Frontend/Features/Gigs/viewModel/viewModel.dart';
+import 'package:near_me/Frontend/Features/Orders/ViewModel/customer_order_provider.dart';
 
 import '../Theme/app_colors.dart';
 import '../Features/Search/Views/CustomerSearchScreen.dart';
@@ -94,7 +95,10 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _showOrderDialog(gig);
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4E342E),
                     foregroundColor: Colors.white,
@@ -107,7 +111,7 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                     ),
                   ),
                   child: const Text(
-                    'View Details',
+                    'Order Now',
                     style: TextStyle(
                       fontFamily: 'Poppins',
                       fontWeight: FontWeight.w600,
@@ -121,6 +125,128 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _showOrderDialog(GigModel gig) async {
+    final requirementsController = TextEditingController();
+
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        bool isSubmitting = false;
+
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: Text('Order ${gig.title}'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Price: \$${gig.price.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF4E342E),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Requirements (optional)',
+                      style: TextStyle(fontFamily: 'Poppins'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: requirementsController,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        hintText: 'Write any extra details for the freelancer',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () => Navigator.pop(dialogContext),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          final user = ref.read(authprovider).value;
+                          final customerId = user?.id;
+
+                          if (customerId == null || customerId.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please sign in again.'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+
+                          setDialogState(() => isSubmitting = true);
+                          try {
+                            await ref
+                                .read(customerOrderProvider.notifier)
+                                .placeOrder(
+                                  gigId: gig.id ?? '',
+                                  freelancerId: gig.freelancerId,
+                                  customerId: customerId,
+                                  amount: gig.price,
+                                  requirements: requirementsController.text
+                                      .trim(),
+                                );
+
+                            if (!mounted) return;
+                            Navigator.pop(dialogContext);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Order placed successfully!'),
+                                backgroundColor: Color(0xFF16A34A),
+                              ),
+                            );
+                          } catch (e) {
+                            if (!mounted) return;
+                            setDialogState(() => isSubmitting = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  e.toString().replaceAll('Exception: ', ''),
+                                ),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4E342E),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: isSubmitting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Place Order'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    requirementsController.dispose();
   }
 
   @override
@@ -365,10 +491,12 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                     final activeCount = gigs.where((g) => g.isActive).length;
                     final avgRating = gigs.isNotEmpty
                         ? gigs.map((g) => g.rating).reduce((a, b) => a + b) /
-                            gigs.length
+                              gigs.length
                         : 0.0;
-                    final uniqueCategories =
-                        gigs.map((g) => g.category).toSet().length;
+                    final uniqueCategories = gigs
+                        .map((g) => g.category)
+                        .toSet()
+                        .length;
 
                     return Container(
                       padding: const EdgeInsets.all(20),
@@ -387,9 +515,7 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                           _buildStatDivider(),
                           _buildStatItem(
                             Icons.star,
-                            avgRating > 0
-                                ? avgRating.toStringAsFixed(1)
-                                : '-',
+                            avgRating > 0 ? avgRating.toStringAsFixed(1) : '-',
                             'Avg Rating',
                           ),
                           _buildStatDivider(),
@@ -482,9 +608,7 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                       final category = entry.value;
                       final isActive = _selectedCategory == category;
                       return Padding(
-                        padding: EdgeInsets.only(
-                          left: index == 0 ? 0 : 12,
-                        ),
+                        padding: EdgeInsets.only(left: index == 0 ? 0 : 12),
                         child: GestureDetector(
                           onTap: () {
                             setState(() {
@@ -633,16 +757,15 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
 
                 return gigsAsyncValue.when(
                   data: (gigs) {
-                    final filteredGigs =
-                        _selectedCategory == 'All'
-                            ? gigs
-                            : gigs
-                                .where(
-                                  (g) =>
-                                      g.category.toLowerCase() ==
-                                      _selectedCategory.toLowerCase(),
-                                )
-                                .toList();
+                    final filteredGigs = _selectedCategory == 'All'
+                        ? gigs
+                        : gigs
+                              .where(
+                                (g) =>
+                                    g.category.toLowerCase() ==
+                                    _selectedCategory.toLowerCase(),
+                              )
+                              .toList();
 
                     if (filteredGigs.isEmpty) {
                       return const Center(
@@ -756,10 +879,9 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                                       isLiked
                                           ? Icons.favorite
                                           : Icons.favorite_border,
-                                      color:
-                                          isLiked
-                                              ? Colors.redAccent
-                                              : Colors.white,
+                                      color: isLiked
+                                          ? Colors.redAccent
+                                          : Colors.white,
                                       size: 20,
                                     ),
                                   ),
@@ -886,9 +1008,7 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                     );
                   },
                   loading: () => const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFBCA073),
-                    ),
+                    child: CircularProgressIndicator(color: Color(0xFFBCA073)),
                   ),
                   error: (err, stack) => Center(
                     child: Text(

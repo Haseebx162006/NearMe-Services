@@ -30,18 +30,20 @@ class GigModel {
   factory GigModel.fromJson(Map<String, dynamic> json) {
     return GigModel(
       id: json['_id'],
-      freelancerId: json['freelancer_id'],
-      title: json['title'],
-      description: json['description'],
+      freelancerId: json['freelancer_id'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
       price: (json['price'] ?? 0.0).toDouble(),
-      category: json['category'],
+      category: json['category'] ?? '',
       images: List<String>.from(json['images'] ?? []),
       rating: (json['rating'] ?? 0.0).toDouble(),
       isActive: json['is_active'] ?? true,
       moderationStatus: (json['moderation_status'] ?? 'approved').toString(),
-      createdAt: DateTime.parse(json['created_at']),
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
+          : DateTime.now(),
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
+          ? DateTime.tryParse(json['updated_at'].toString())
           : null,
     );
   }

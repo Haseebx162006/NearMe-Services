@@ -66,8 +66,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!mounted) return;
       if (!serviceEnabled) {
-        setState(
-            () => _locationStatus = '️ Location services are disabled');
+        setState(() => _locationStatus = '️ Location services are disabled');
         return;
       }
 
@@ -83,7 +82,8 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
       if (!mounted) return;
       if (permission == LocationPermission.deniedForever) {
         setState(
-            () => _locationStatus = '️ Location permission permanently denied');
+          () => _locationStatus = '️ Location permission permanently denied',
+        );
         return;
       }
 
@@ -138,7 +138,8 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
 
     if (_latitude == null || _longitude == null) {
       _showError(
-          'Location not detected. Please enable GPS and tap the location button.');
+        'Location not detected. Please enable GPS and tap the location button.',
+      );
       return;
     }
 
@@ -183,7 +184,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
       if (!mounted) return;
 
       // 3. Refresh the gig list
-      ref.read(gigprovider.notifier).refreshGigs();
+      ref.read(gigprovider.notifier).getMyGigs();
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -217,10 +218,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
 
   void _showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: Colors.red.shade600,
-      ),
+      SnackBar(content: Text(msg), backgroundColor: Colors.red.shade600),
     );
   }
 
@@ -250,8 +248,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
         children: [
           // Step Progress Indicator
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Row(
               children: [
                 _buildStepHeader('Basic Info', true),
@@ -284,7 +281,10 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
                     children: [
                       ElevatedButton.icon(
                         onPressed: _isSubmitting ? null : _pickGigImages,
-                        icon: const Icon(Icons.photo_library_outlined, size: 18),
+                        icon: const Icon(
+                          Icons.photo_library_outlined,
+                          size: 18,
+                        ),
                         label: const Text('Pick images'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFF3E5D8),
@@ -357,10 +357,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
                   TextField(
                     controller: _descriptionController,
                     maxLines: 4,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                    ),
+                    style: const TextStyle(fontFamily: 'Poppins', fontSize: 14),
                     decoration: InputDecoration(
                       hintText: 'Describe your service in detail...',
                       hintStyle: const TextStyle(
@@ -371,18 +368,18 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
                       fillColor: AppColors.background,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide:
-                            const BorderSide(color: AppColors.border),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide:
-                            const BorderSide(color: AppColors.border),
+                        borderSide: const BorderSide(color: AppColors.border),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(
-                            color: AppColors.primary, width: 1.5),
+                          color: AppColors.primary,
+                          width: 1.5,
+                        ),
                       ),
                     ),
                   ),
@@ -430,24 +427,28 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
                           ),
                         ),
                         items: _categories
-                            .map((cat) => DropdownMenuItem(
-                                  value: cat,
-                                  child: Text(
-                                    cat,
-                                    style: const TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 14,
-                                    ),
+                            .map(
+                              (cat) => DropdownMenuItem(
+                                value: cat,
+                                child: Text(
+                                  cat,
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
                                   ),
-                                ))
+                                ),
+                              ),
+                            )
                             .toList(),
                         onChanged: (value) {
                           if (value != null) {
                             setState(() => _selectedCategory = value);
                           }
                         },
-                        icon: const Icon(Icons.keyboard_arrow_down,
-                            color: Colors.grey),
+                        icon: const Icon(
+                          Icons.keyboard_arrow_down,
+                          color: Colors.grey,
+                        ),
                       ),
                     ),
                   ),
@@ -534,9 +535,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
             padding: const EdgeInsets.all(20),
             child: _isSubmitting
                 ? const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFBCA073),
-                    ),
+                    child: CircularProgressIndicator(color: Color(0xFFBCA073)),
                   )
                 : CustomPrimaryButton(
                     label: 'Create Gig',

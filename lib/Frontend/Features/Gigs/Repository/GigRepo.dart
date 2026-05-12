@@ -27,6 +27,7 @@ class GigRepository {
       }
       return [];
     } catch (e) {
+      print('GetAllGigs Error: $e');
       return [];
     }
   }
@@ -47,6 +48,7 @@ class GigRepository {
       }
       return [];
     } catch (e) {
+      print('GetMyGigs Error: $e');
       return [];
     }
   }
@@ -95,10 +97,7 @@ class GigRepository {
 
       await _dio.patch(
         '/auth/update-location',
-        data: {
-          'longitude': longitude,
-          'latitude': latitude,
-        },
+        data: {'longitude': longitude, 'latitude': latitude},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
       return true;
