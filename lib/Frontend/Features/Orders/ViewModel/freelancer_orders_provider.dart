@@ -29,4 +29,10 @@ class FreelancerOrdersNotifier extends AsyncNotifier<List<OrderModel>> {
       return await _repo.getAcceptedOrders();
     });
   }
+
+  Future<void> updateOrderStatus(String orderId, String newStatus) async {
+    await _repo.updateOrderStatus(orderId, newStatus);
+    // Refresh to get the updated list
+    await refreshOrders();
+  }
 }

@@ -28,3 +28,15 @@ async def get_orders_for_freelancer(current_user: dict = Depends(role_checker("f
 async def get_my_accepted_orders(current_user: dict = Depends(role_checker("freelancer"))):
     """Get only accepted orders for the current freelancer"""
     return await controller.get_orders_by_user(str(current_user["_id"]))
+
+from pydantic import BaseModel
+
+class UpdateOrderStatusSchema(BaseModel):
+    status: str
+
+@router.patch("/{order_id}/status")
+async def update_order_status(order_id: str, status_data: UpdateOrderStatusSchema, current_user: dict = Depends(role_checker(["freelancer", "customer"]))):
+    return await controller.update_order_status(order_id, status_data.status)
+async def get_my_accepted_orders(current_user: dict = Depends(role_checker("freelancer"))):
+    """Get only accepted orders for the current freelancer"""
+    return await controller.get_orders_by_user(str(current_user["_id"]))

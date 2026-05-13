@@ -24,6 +24,9 @@ class OrderController:
     
     async def delete_order(self, order_id: str):
         return await self.service.delete_order(order_id)
+        
+    async def update_order_status(self, order_id: str, new_status: str):
+        return await self.service.update_order(order_id, {"status": new_status})
     
     
     

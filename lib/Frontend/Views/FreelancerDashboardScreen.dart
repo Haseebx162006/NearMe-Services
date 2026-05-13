@@ -4,7 +4,7 @@ import '../Features/Auth/ViewModel/authViewModel.dart';
 import '../Features/analytics/analytics_provider.dart';
 
 import '../Features/Gigs/Views/FreelancerGigsScreen.dart';
-import '../Features/Orders/Views/CustomerOrderHistoryScreen.dart'; // optional placeholder
+import 'FreelancerOrdersScreen.dart';
 import '../Features/Auth/View/LoginScreen.dart'; // Ensure correct path
 
 class FreelancerDashboardScreen extends ConsumerStatefulWidget {
@@ -28,9 +28,7 @@ class _FreelancerDashboardScreenState
         children: [
           _buildDashboardTab(context, ref),
           const FreelancerGigsScreen(),
-          const Scaffold(
-            body: Center(child: Text("Orders - Pending Integration")),
-          ),
+          const FreelancerOrdersScreen(),
           const Scaffold(
             body: Center(child: Text("Messages - Pending Integration")),
           ),

@@ -97,7 +97,6 @@ class _FreelancerOrdersScreenState
                       final order = orders[index];
                       final isPending = order.status == 'pending';
                       final isAccepted = order.status == 'accepted';
-                      final isCompleted = order.status == 'completed';
 
                       return _buildOrderCard(
                         clientName:
@@ -123,16 +122,37 @@ class _FreelancerOrdersScreenState
                                 children: [
                                   Expanded(
                                     child: ElevatedButton.icon(
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Order declined (pending)',
-                                            ),
-                                          ),
-                                        );
+                                      onPressed: () async {
+                                        try {
+                                          await ref
+                                              .read(
+                                                freelancerOrdersProvider
+                                                    .notifier,
+                                              )
+                                              .updateOrderStatus(
+                                                order.id ?? '',
+                                                'declined',
+                                              );
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Order declined'),
+                                              ),
+                                            );
+                                          }
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text('Error: $e'),
+                                              ),
+                                            );
+                                          }
+                                        }
                                       },
                                       icon: const Icon(Icons.close, size: 18),
                                       label: const Text('Decline'),
@@ -156,16 +176,37 @@ class _FreelancerOrdersScreenState
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: ElevatedButton.icon(
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Order accepted (pending)',
-                                            ),
-                                          ),
-                                        );
+                                      onPressed: () async {
+                                        try {
+                                          await ref
+                                              .read(
+                                                freelancerOrdersProvider
+                                                    .notifier,
+                                              )
+                                              .updateOrderStatus(
+                                                order.id ?? '',
+                                                'accepted',
+                                              );
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Order accepted'),
+                                              ),
+                                            );
+                                          }
+                                        } catch (e) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text('Error: $e'),
+                                              ),
+                                            );
+                                          }
+                                        }
                                       },
                                       icon: const Icon(Icons.check, size: 18),
                                       label: const Text('Accept'),
@@ -192,14 +233,36 @@ class _FreelancerOrdersScreenState
                             ? SizedBox(
                                 width: double.infinity,
                                 child: ElevatedButton(
-                                  onPressed: () {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Order marked as completed',
-                                        ),
-                                      ),
-                                    );
+                                  onPressed: () async {
+                                    try {
+                                      await ref
+                                          .read(
+                                            freelancerOrdersProvider.notifier,
+                                          )
+                                          .updateOrderStatus(
+                                            order.id ?? '',
+                                            'completed',
+                                          );
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Order marked as completed',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(content: Text('Error: $e')),
+                                        );
+                                      }
+                                    }
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF4E342E),

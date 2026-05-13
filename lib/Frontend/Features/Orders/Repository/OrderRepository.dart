@@ -109,4 +109,24 @@ class OrderRepository {
       return [];
     }
   }
+
+  /// Update order status
+  Future<void> updateOrderStatus(String orderId, String status) async {
+    try {
+      final token = await _secureStorage.getToken();
+      if (token == null) throw Exception('Not authenticated');
+
+      final response = await _dio.patch(
+        '/orders/$orderId/status',
+        data: {'status': status},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update status');
+      }
+    } catch (e) {
+      throw Exception('Update status error: $e');
+    }
+  }
 }
