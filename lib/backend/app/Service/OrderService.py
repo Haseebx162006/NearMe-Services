@@ -8,20 +8,35 @@ class OrderService:
     def __init__(self):
         self.db = db
 
-    def _serialize_order(self, order: dict):
-        serialized = dict(order )
+    async def _serialize_order(self, order: dict):
+        serialized = dict(order)
         serialized["_id"] = str(serialized["_id"])
+        
+        # Fetch customer name
+        if "customer_id" in serialized:
+            customer = await self.db.users.find_one({"_id": validate_object_id(serialized["customer_id"])})
+            serialized["customer_name"] = customer["name"] if customer else "Unknown Customer"
+            
+        # Fetch gig title
+        if "gig_id" in serialized:
+            gig = await self.db.gigs.find_one({"_id": validate_object_id(serialized["gig_id"])})
+            serialized["gig_title"] = gig["title"] if gig else "Unknown Gig"
+            
         return serialized
     
-    async def create_order(self, order_data:CreateOrderSchema):
-        
+    async def create_order(self, order_data: dict):
         # Logic to create an order in the database
-        
-        payload = dict(order_data)
-        if not payload:
+        if not order_data:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid order data")
         
-        Order = await self.db.orders.insert_one(payload)
+        # Ensure status is set if not provided
+        if "status" not in order_data:
+            order_data["status"] = "pending"
+            
+        import datetime
+        order_data["created_at"] = datetime.datetime.utcnow().isoformat()
+        
+        Order = await self.db.orders.insert_one(order_data)
         return str(Order.inserted_id)
      
      
@@ -36,17 +51,22 @@ class OrderService:
     
     async def get_orders_by_user(self, user_id: str):
         # Logic to retrieve all orders for a specific user from the database
-        
         orders = await self.db.orders.find({
             "$or": [
                 {"customer_id": user_id},
                 {"freelancer_id": user_id},
-                {"user_id": user_id},
             ]
         }).to_list(length=100)
-        if not orders:
-            raise HTTPException(status_code=404, detail="No orders found for this user")
-        return [self._serialize_order(order) for order in orders]
+        
+        return [await self._serialize_order(order) for order in orders]
+
+    async def get_orders_as_freelancer(self, freelancer_id: str):
+        orders = await self.db.orders.find({"freelancer_id": freelancer_id}).to_list(length=100)
+        return [await self._serialize_order(order) for order in orders]
+
+    async def get_orders_as_customer(self, customer_id: str):
+        orders = await self.db.orders.find({"customer_id": customer_id}).to_list(length=100)
+        return [await self._serialize_order(order) for order in orders]
     
     async def delete_order(self, order_id: str):
         # Logic to delete an order by its ID from the database

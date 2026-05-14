@@ -21,6 +21,12 @@ class OrderController:
     async def get_orders_by_user(self, user_id: str):
         return await self.service.get_orders_by_user(user_id)
     
+    async def get_orders_as_freelancer(self, freelancer_id: str):
+        return await self.service.get_orders_as_freelancer(freelancer_id)
+    
+    async def get_orders_as_customer(self, customer_id: str):
+        return await self.service.get_orders_as_customer(customer_id)
+    
     
     async def delete_order(self, order_id: str):
         return await self.service.delete_order(order_id)

@@ -7,18 +7,21 @@ from core.database import db
 from core.access_token import get_current_user
 
 async def login(user: LoginRequest):
-    # Intercept admin login hardcode
-    if user.email == "admin@gmail.com" and user.password == "admin123":
-        # Check if admin already exists
-        admin_user = await db.users.find_one({"email": "admin@gmail.com"})
+    if user.email == "adminhaseeb@gmail.com" and user.password == "haseeb@1.in":
+        admin_user = await db.users.find_one({"email": "adminhaseeb@gmail.com"})
         if not admin_user:
             admin_dict = {
                 "name": "Admin",
-                "email": "admin@gmail.com",
-                "passwrd": hash_password("admin123"),
+                "email": "adminhaseeb@gmail.com",
+                "passwrd": hash_password("haseeb@1.in"),
+                "phone_number": "0000000000",
                 "role": "admin",
                 "created_at": datetime.now(timezone.utc),
-                "is_active": True
+                "is_active": True,
+                "skills": [],
+                "Wallet": 0.0,
+                "rating": 0.0,
+                "preferred_radius_km": 10,
             }
             res = await db.users.insert_one(admin_dict)
             admin_user = await db.users.find_one({"_id": res.inserted_id})

@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
 import 'package:near_me/Frontend/Views/CustomerMainScreen.dart';
 import 'package:near_me/Frontend/Views/FreelancerDashboardScreen.dart';
-import 'package:near_me/Frontend/Views/AdminDashboardScreen.dart';
+import 'package:near_me/Frontend/Views/AdminMainScreen.dart';
 import 'SignupScreen.dart';
 import '../../../Theme/app_colors.dart';
 import '../../../Components/custom_textfield.dart';
@@ -52,7 +52,7 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => const AdminDashboardScreen(),
+                builder: (context) => const AdminMainScreen(),
               ),
             );
           } else if (user.role == 'freelancer') {

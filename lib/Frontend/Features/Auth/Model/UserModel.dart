@@ -58,13 +58,29 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    DateTime parsedCreatedAt;
+    try {
+      parsedCreatedAt = DateTime.parse(json['created_at'] ?? '');
+    } catch (_) {
+      parsedCreatedAt = DateTime.now();
+    }
+
+    DateTime? parsedUpdatedAt;
+    if (json['updated_at'] != null) {
+      try {
+        parsedUpdatedAt = DateTime.parse(json['updated_at']);
+      } catch (_) {
+        parsedUpdatedAt = null;
+      }
+    }
+
     return UserModel(
-      id: json['_id'],
-      name: json['name'],
-      email: json['email'],
-      password: json['passwrd'] ?? "",
-      phoneNumber: json['phone_number'],
-      role: json['role'],
+      id: json['_id']?.toString(),
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      password: json['passwrd'] ?? '',
+      phoneNumber: json['phone_number'] ?? '',
+      role: json['role'] ?? 'customer',
       profilePicture: json['profile_picture'],
       profileBio: json['profile_bio'],
       location: json['location'] != null
@@ -76,10 +92,8 @@ class UserModel {
       preferredRadiusKm: json['preferred_radius_km'] ?? 10,
       isActive: json['is_active'] ?? true,
       suspensionRemark: json['suspension_remark'],
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
-          : null,
+      createdAt: parsedCreatedAt,
+      updatedAt: parsedUpdatedAt,
     );
   }
 

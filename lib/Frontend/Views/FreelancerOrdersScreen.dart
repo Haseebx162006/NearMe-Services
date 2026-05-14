@@ -99,10 +99,9 @@ class _FreelancerOrdersScreenState
                       final isAccepted = order.status == 'accepted';
 
                       return _buildOrderCard(
-                        clientName:
-                            'Customer ${order.customerId.substring(0, 5)}',
-                        service: 'Gig ${order.gigId.substring(0, 5)}',
-                        dateTime: order.createdAt.toString(),
+                        clientName: order.customerName ?? 'New Customer',
+                        service: order.gigTitle ?? 'Service Request',
+                        dateTime: "${order.createdAt.day}/${order.createdAt.month}/${order.createdAt.year} ${order.createdAt.hour}:${order.createdAt.minute}",
                         amount: '\$${order.price.toStringAsFixed(2)}',
                         requirements:
                             order.description ?? 'No details provided',

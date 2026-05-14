@@ -6,6 +6,8 @@ class OrderModel {
   final String status; // pending, accepted, completed, cancelled
   final double price;
   final String? description;
+  final String? customerName;
+  final String? gigTitle;
   final DateTime createdAt;
   final DateTime? completedAt;
 
@@ -17,6 +19,8 @@ class OrderModel {
     this.status = 'pending',
     required this.price,
     this.description,
+    this.customerName,
+    this.gigTitle,
     required this.createdAt,
     this.completedAt,
   });
@@ -30,6 +34,8 @@ class OrderModel {
       status: json['status'] ?? 'pending',
       price: (json['price'] ?? 0.0).toDouble(),
       description: json['description'],
+      customerName: json['customer_name'],
+      gigTitle: json['gig_title'],
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
           : DateTime.now(),

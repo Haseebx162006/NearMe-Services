@@ -16,10 +16,7 @@ class AdminOrdersPaymentsScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF3E2723)),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: false,
         title: const Text(
           'Orders & Payments',
           style: TextStyle(
@@ -40,47 +37,59 @@ class AdminOrdersPaymentsScreen extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
           children: [
             summaryAsync.when(
-              loading: () => _buildSummaryBox(
-                label: 'Total in Escrow',
-                value: 'Loading…',
-                icon: Icons.attach_money,
-                color: const Color(0xFFC7A76D),
+              loading: () => Row(
+                children: [
+                  _buildSummaryBox(
+                    label: 'Total in Escrow',
+                    value: 'Loading…',
+                    icon: Icons.attach_money,
+                    color: const Color(0xFFC7A76D),
+                  ),
+                  const SizedBox(width: 15),
+                  _buildSummaryBox(
+                    label: 'Disputed Orders',
+                    value: 'Loading…',
+                    icon: Icons.error_outline,
+                    color: const Color(0xFFD32F2F),
+                    isAlert: true,
+                  ),
+                ],
               ),
-              error: (e, _) => _buildSummaryBox(
-                label: 'Total in Escrow',
-                value: 'Error',
-                icon: Icons.attach_money,
-                color: const Color(0xFFC7A76D),
+              error: (e, _) => Row(
+                children: [
+                  _buildSummaryBox(
+                    label: 'Total in Escrow',
+                    value: 'Error',
+                    icon: Icons.attach_money,
+                    color: const Color(0xFFC7A76D),
+                  ),
+                  const SizedBox(width: 15),
+                  _buildSummaryBox(
+                    label: 'Disputed Orders',
+                    value: 'Error',
+                    icon: Icons.error_outline,
+                    color: const Color(0xFFD32F2F),
+                    isAlert: true,
+                  ),
+                ],
               ),
-              data: (s) => _buildSummaryBox(
-                label: 'Total in Escrow',
-                value: '\$${s.totalInEscrow.toStringAsFixed(2)}',
-                icon: Icons.attach_money,
-                color: const Color(0xFFC7A76D),
-              ),
-            ),
-            const SizedBox(height: 15),
-            summaryAsync.when(
-              loading: () => _buildSummaryBox(
-                label: 'Disputed Orders',
-                value: 'Loading…',
-                icon: Icons.error_outline,
-                color: const Color(0xFFD32F2F),
-                isAlert: true,
-              ),
-              error: (e, _) => _buildSummaryBox(
-                label: 'Disputed Orders',
-                value: 'Error',
-                icon: Icons.error_outline,
-                color: const Color(0xFFD32F2F),
-                isAlert: true,
-              ),
-              data: (s) => _buildSummaryBox(
-                label: 'Disputed Orders',
-                value: '${s.disputedOrders}',
-                icon: Icons.error_outline,
-                color: const Color(0xFFD32F2F),
-                isAlert: true,
+              data: (s) => Row(
+                children: [
+                  _buildSummaryBox(
+                    label: 'Total in Escrow',
+                    value: '\$${s.totalInEscrow.toStringAsFixed(2)}',
+                    icon: Icons.attach_money,
+                    color: const Color(0xFFC7A76D),
+                  ),
+                  const SizedBox(width: 15),
+                  _buildSummaryBox(
+                    label: 'Disputed Orders',
+                    value: '${s.disputedOrders}',
+                    icon: Icons.error_outline,
+                    color: const Color(0xFFD32F2F),
+                    isAlert: true,
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 20),
