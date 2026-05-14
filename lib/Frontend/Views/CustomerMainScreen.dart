@@ -8,6 +8,7 @@ import 'package:near_me/Frontend/Features/Orders/ViewModel/customer_order_provid
 import '../Theme/app_colors.dart';
 import '../Features/Search/Views/CustomerSearchScreen.dart';
 import '../Features/Inbox/Views/CustomerInboxScreen.dart';
+import '../Features/Chat/Views/RealtimeInboxScreen.dart';
 import '../Features/Profile/Views/CustomerProfileScreen.dart';
 import '../Features/Gigs/Views/GigDetailScreen.dart';
 
@@ -79,7 +80,7 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
         children: [
           _buildHomeTab(context),
           const CustomerSearchScreen(),
-          const CustomerInboxScreen(),
+          const RealtimeInboxScreen(),
           const CustomerProfileScreen(),
         ],
       ),

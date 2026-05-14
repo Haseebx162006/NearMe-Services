@@ -5,6 +5,7 @@ import '../Features/analytics/analytics_provider.dart';
 import '../Features/Gigs/Views/FreelancerGigsScreen.dart';
 import 'FreelancerOrdersScreen.dart';
 import '../Features/Auth/View/LoginScreen.dart';
+import '../Features/Chat/Views/RealtimeInboxScreen.dart';
 
 class FreelancerDashboardScreen extends ConsumerStatefulWidget {
   const FreelancerDashboardScreen({super.key});
@@ -28,9 +29,7 @@ class _FreelancerDashboardScreenState
           _buildDashboardTab(context, ref),
           const FreelancerGigsScreen(),
           const FreelancerOrdersScreen(),
-          const Scaffold(
-            body: Center(child: Text("Messages - Pending Integration")),
-          ),
+          const RealtimeInboxScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

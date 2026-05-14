@@ -4,6 +4,8 @@ import '../../Auth/ViewModel/authViewModel.dart';
 import '../Model/GigModel.dart';
 import '../../Orders/ViewModel/customer_order_provider.dart';
 import '../../../Theme/app_colors.dart';
+import '../../Chat/ViewModel/chatProvider.dart';
+import '../../Chat/Views/ChatScreen.dart';
 
 class GigDetailScreen extends ConsumerStatefulWidget {
   final GigModel gig;
@@ -224,7 +226,56 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
                       contentPadding: const EdgeInsets.all(20),
                     ),
                   ),
-                  const SizedBox(height: 100), // Space for button
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final user = ref.read(authprovider).value;
+                        if (user == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please sign in to chat')),
+                          );
+                          return;
+                        }
+                        
+                        try {
+                          final chatRepo = ref.read(chatRepositoryProvider);
+                          final conversation = await chatRepo.startConversation(
+                            widget.gig.freelancerId,
+                            widget.gig.id ?? '',
+                          );
+                          
+                          // Set the active chat ID
+                          ref.read(selectedChatIdProvider.notifier).state = conversation.id;
+                          
+                          if (!mounted) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatScreen(conversation: conversation),
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Failed to start chat: $e')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.chat_outlined),
+                      label: const Text('Chat with Freelancer'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        minimumSize: const Size(double.infinity, 50),
+                        foregroundColor: const Color(0xFF4E342E),
+                        side: const BorderSide(color: Color(0xFF4E342E)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 120), // Extra space
                 ],
               ),
             ),

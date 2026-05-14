@@ -49,7 +49,8 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
       next.whenData((user) {
         if (user != null) {
           final role = user.role.toLowerCase().trim();
-          print('[LoginScreen] User logged in with role: $role');
+
+
           
           if (role == 'admin') {
             Navigator.pushReplacement(
