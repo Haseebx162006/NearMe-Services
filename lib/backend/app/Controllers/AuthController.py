@@ -7,14 +7,24 @@ from core.database import db
 from core.access_token import get_current_user
 
 async def login(user: LoginRequest):
-    if user.email == "adminhaseeb@gmail.com" and user.password == "haseeb@1.in":
-        admin_user = await db.users.find_one({"email": "adminhaseeb@gmail.com"})
+    # Admin login hardcodes
+    admin_credentials = {
+        "adminhaseeb@gmail.com": "haseeb@1.in",
+        "admin1@gmail.com": "haseeb@1"
+    }
+
+    # Case-insensitive email check for hardcoded admins
+    email_lower = user.email.lower().strip()
+    if email_lower in admin_credentials and user.password == admin_credentials[email_lower]:
+        admin_user = await db.users.find_one({"email": email_lower})
+        
         if not admin_user:
+            # Create the admin record if it doesn't exist
             admin_dict = {
                 "name": "Admin",
-                "email": "adminhaseeb@gmail.com",
-                "passwrd": hash_password("haseeb@1.in"),
-                "phone_number": "0000000000",
+                "email": email_lower,
+                "passwrd": hash_password(user.password),
+                "phone_number": "03249540797",
                 "role": "admin",
                 "created_at": datetime.now(timezone.utc),
                 "is_active": True,
@@ -25,20 +35,23 @@ async def login(user: LoginRequest):
             }
             res = await db.users.insert_one(admin_dict)
             admin_user = await db.users.find_one({"_id": res.inserted_id})
+        elif admin_user.get("role") != "admin":
+            # Force upgrade to admin if they were created as customer/freelancer by mistake
+            await db.users.update_one({"_id": admin_user["_id"]}, {"$set": {"role": "admin"}})
+            admin_user["role"] = "admin"
         
-        token = create_token(data={"sub": str(admin_user['_id']), "role": "admin"}, expire=timedelta(minutes=30))
+        # Double check the role is set to admin in our local dict before creating the token
+        user_id_str = str(admin_user['_id'])
+        token = create_token(data={"sub": user_id_str, "role": "admin"}, expire=timedelta(minutes=60))
         return {"access_token": token, "token_type": "bearer"}
 
-    #here i will authenticate the user and then create a token for them
+    # Standard authentication flow
     try:
-        User = await db.users.find_one({'email': user.email})
+        User = await db.users.find_one({'email': email_lower})
         
-        # checking if the user exsits in db or not 
         if User is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         
-        
-        # Now checking here the password of the user is correct or not
         # The password is stored as 'passwrd' in the database
         stored_password = User.get('passwrd') or User.get('password')
         if not stored_password:
@@ -48,78 +61,66 @@ async def login(user: LoginRequest):
         if not user_password:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         
-        # after verification now creating the token for the user 
-        token = create_token(data={"sub": str(User['_id']), "role": User['role']}, expire=timedelta(minutes=30))
+        # Create token with the role stored in the database
+        token = create_token(data={"sub": str(User['_id']), "role": User.get('role', 'customer')}, expire=timedelta(minutes=60))
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-    
+        print(f"Login Error: {e}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication failed")
     
     return {"access_token": token, "token_type": "bearer"}
     
 async def signup(user: CustomerCreate):
-    
-    #here i will create a new user in the database and then create a token for them
     try:
-        # checking if the user already exists in db or not
-        User_exists = await db.users.find_one({'email': user.email})
+        # Check if the user already exists
+        User_exists = await db.users.find_one({'email': user.email.lower().strip()})
         if User_exists is not None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User already exists")
         
-        
-        # now here hashing the password so that it does not get stored in plain text in the database
         hashed_password = hash_password(user.password)
         
-        
-        # Convert Pydantic model to dict (model_dump is the Pydantic v2 way)
-        # exclude_none=True removes any None fields (like location) so they
-        # don't get inserted into MongoDB and break the 2dsphere index
         User_dict = user.model_dump(exclude_none=True)
-        
-        # Pydantic schema uses 'password', but Database model uses 'passwrd'
+        User_dict['email'] = User_dict['email'].lower().strip()
         User_dict['passwrd'] = hashed_password
         if 'password' in User_dict:
             del User_dict['password']
         
-        # Add default timestamps (using timezone-aware UTC)
         User_dict['created_at'] = datetime.now(timezone.utc)
         User_dict['is_active'] = True
         
-        # now inserting into the db
+        # Default empty fields for consistency
+        User_dict.setdefault('skills', [])
+        User_dict.setdefault('Wallet', 0.0)
+        User_dict.setdefault('rating', 0.0)
+        User_dict.setdefault('preferred_radius_km', 10)
+        
         result = await db.users.insert_one(User_dict)
         
         token = create_token(
             data={"sub": str(result.inserted_id), "role": user.role},
-            expire=timedelta(minutes=30))
+            expire=timedelta(minutes=60))
         
         return {"access_token": token, "token_type": "bearer"}
-        
         
     except HTTPException:
         raise
     except Exception as e:
         print(f"Signup Error: {e}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Could not create user: {str(e)}")
-    
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Could not create account")
     
 async def getname(user):
-    return {"name": user['name']}
+    return {"name": user.get('name', 'User')}
 
 async def get_me(user):
-    # Create a copy so we do not mutate the dictionary directly
     user_dict = dict(user)
-    
-    # Cast ObjectId to string so it can be serialized to JSON
     if '_id' in user_dict:
         user_dict['_id'] = str(user_dict['_id'])
         
-    # Remove the sensitive password field
     user_dict.pop('passwrd', None)
     user_dict.pop('password', None)
     
-    # Make sure times are serialized
     if 'created_at' in user_dict and isinstance(user_dict['created_at'], datetime):
         user_dict['created_at'] = user_dict['created_at'].isoformat()
     if 'updated_at' in user_dict and isinstance(user_dict['updated_at'], datetime):
@@ -127,31 +128,13 @@ async def get_me(user):
         
     return user_dict
 
-
 async def update_location(user, longitude: float, latitude: float):
-    """
-    Updates the user's location in the database.
-    Called from the Flutter app when the user's GPS position is detected.
-    Stores it as GeoJSON Point so MongoDB's $geoNear queries work correctly.
-    """
     from bson import ObjectId
-
     try:
         user_id = user["_id"]
+        if not (-180 <= longitude <= 180) or not (-90 <= latitude <= 90):
+            raise HTTPException(status_code=400, detail="Invalid coordinates")
 
-        # Validate coordinate ranges
-        if not (-180 <= longitude <= 180):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Longitude must be between -180 and 180",
-            )
-        if not (-90 <= latitude <= 90):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Latitude must be between -90 and 90",
-            )
-
-        # GeoJSON format: [longitude, latitude]
         location_doc = {
             "type": "Point",
             "coordinates": [longitude, latitude],
@@ -161,13 +144,6 @@ async def update_location(user, longitude: float, latitude: float):
             {"_id": user_id},
             {"$set": {"location": location_doc}},
         )
-
-        return {"message": "Location updated successfully"}
-
-    except HTTPException:
-        raise
+        return {"message": "Location updated"}
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Could not update location: {str(e)}",
-        )
+        raise HTTPException(status_code=500, detail=str(e))

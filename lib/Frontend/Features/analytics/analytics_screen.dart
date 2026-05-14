@@ -3,15 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'analytics_provider.dart';
 
 class AnalyticsScreen extends ConsumerWidget {
-  final String userId;
-
-  const AnalyticsScreen({super.key, required this.userId});
+  const AnalyticsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totalEarningsAsync = ref.watch(totalEarningsProvider(userId));
-    final monthlyEarningsAsync = ref.watch(monthlyEarningsProvider(userId));
-    final totalOrdersAsync = ref.watch(totalOrdersProvider(userId));
+    final analyticsAsync = ref.watch(analyticsProvider);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8F6),
@@ -28,41 +24,95 @@ class AnalyticsScreen extends ConsumerWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF3E2723)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            _buildAsyncCard(
-              title: 'Total Earnings',
-              icon: Icons.attach_money,
-              asyncValue: totalEarningsAsync,
-              parser: (val) => '\$${val.toStringAsFixed(2)}',
+      body: analyticsAsync.when(
+        data: (analytics) => RefreshIndicator(
+          onRefresh: () => ref.refresh(analyticsProvider.future),
+          color: const Color(0xFF4E342E),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                _buildStatCard(
+                  title: 'Total Earnings',
+                  icon: Icons.attach_money,
+                  value: '\$${analytics.totalEarnings.toStringAsFixed(2)}',
+                  color: const Color(0xFFC7A76D),
+                ),
+                const SizedBox(height: 16),
+                _buildStatCard(
+                  title: 'Monthly Earnings',
+                  icon: Icons.calendar_today,
+                  value: '\$${analytics.monthEarnings.toStringAsFixed(2)}',
+                  color: const Color(0xFF8B5E3C),
+                ),
+                const SizedBox(height: 16),
+                _buildStatCard(
+                  title: 'Total Orders',
+                  icon: Icons.shopping_bag_outlined,
+                  value: analytics.totalOrders.toString(),
+                  color: const Color(0xFF4E342E),
+                ),
+                const SizedBox(height: 16),
+                _buildStatCard(
+                  title: 'Pending Orders',
+                  icon: Icons.access_time,
+                  value: analytics.pendingOrders.toString(),
+                  color: Colors.orange,
+                ),
+                
+                if (analytics.recentOrders.isNotEmpty) ...[
+                  const SizedBox(height: 32),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Recent Activity',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF3E2723),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ...analytics.recentOrders.map((order) => _buildRecentOrderTile(order)),
+                ],
+              ],
             ),
-            const SizedBox(height: 16),
-            _buildAsyncCard(
-              title: 'Monthly Earnings',
-              icon: Icons.calendar_today,
-              asyncValue: monthlyEarningsAsync,
-              parser: (val) => '\$${val.toStringAsFixed(2)}',
-            ),
-            const SizedBox(height: 16),
-            _buildAsyncCard(
-              title: 'Total Orders',
-              icon: Icons.shopping_bag_outlined,
-              asyncValue: totalOrdersAsync,
-              parser: (val) => val.toString(),
-            ),
-          ],
+          ),
+        ),
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF4E342E)),
+        ),
+        error: (err, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                'Error: $err',
+                style: const TextStyle(fontFamily: 'Poppins', color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => ref.invalidate(analyticsProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildAsyncCard<T>({
+  Widget _buildStatCard({
     required String title,
     required IconData icon,
-    required AsyncValue<T> asyncValue,
-    required String Function(T) parser,
+    required String value,
+    required Color color,
   }) {
     return Container(
       width: double.infinity,
@@ -81,9 +131,9 @@ class AnalyticsScreen extends ConsumerWidget {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: const Color(0xFFC7A76D).withOpacity(0.2),
+            backgroundColor: color.withOpacity(0.1),
             radius: 24,
-            child: Icon(icon, color: const Color(0xFFC7A76D)),
+            child: Icon(icon, color: color),
           ),
           const SizedBox(width: 20),
           Expanded(
@@ -98,30 +148,65 @@ class AnalyticsScreen extends ConsumerWidget {
                     fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 8),
-                asyncValue.when(
-                  data: (data) => Text(
-                    parser(data),
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF3E2723),
-                    ),
-                  ),
-                  loading: () => const SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  error: (e, _) => Text(
-                    'Error loading data',
-                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF3E2723),
                   ),
                 ),
               ],
             ),
           )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecentOrderTile(RecentOrder order) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF3E5D8)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                order.serviceName,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              Text(
+                order.customerName,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  color: Colors.grey,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          Text(
+            '\$${order.amount.toStringAsFixed(0)}',
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF4E342E),
+            ),
+          ),
         ],
       ),
     );

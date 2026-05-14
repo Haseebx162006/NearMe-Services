@@ -48,14 +48,17 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
     ref.listen(authprovider, (prev, next) {
       next.whenData((user) {
         if (user != null) {
-          if (user.role == 'admin') {
+          final role = user.role.toLowerCase().trim();
+          print('[LoginScreen] User logged in with role: $role');
+          
+          if (role == 'admin') {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (context) => const AdminMainScreen(),
               ),
             );
-          } else if (user.role == 'freelancer') {
+          } else if (role == 'freelancer') {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -63,6 +66,7 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
               ),
             );
           } else {
+            // Default to customer main screen for all other roles
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => CustomerMainScreen()),

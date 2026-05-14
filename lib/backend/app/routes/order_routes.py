@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from Controllers.OrderController import OrderController
 from schema.OrderSchema import CreateOrderSchema
 from core.checker import role_checker

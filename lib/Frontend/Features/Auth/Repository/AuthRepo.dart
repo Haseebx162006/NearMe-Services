@@ -99,10 +99,7 @@ class AuthRepository {
         throw Exception("No token found. User might not be logged in.");
       }
 
-      final response = await _dio.get(
-        '/auth/getname',
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
+      final response = await _dio.get('/auth/getname');
 
       if (response.statusCode == 200) {
         return response.data['name'];
@@ -118,13 +115,7 @@ class AuthRepository {
 
   Future<UserModel?> getUserData() async {
     try {
-      final token = await _secureStorage.getToken();
-      if (token == null) return null;
-
-      final response = await _dio.get(
-        '/auth/me', // Corrected to common /me endpoint for user details
-        options: Options(headers: {'Authorization': 'Bearer $token'}),
-      );
+      final response = await _dio.get('/auth/me');
 
       if (response.statusCode == 200) {
         return UserModel.fromJson(response.data);

@@ -34,7 +34,7 @@ class OrderService:
             order_data["status"] = "pending"
             
         import datetime
-        order_data["created_at"] = datetime.datetime.utcnow().isoformat()
+        order_data["created_at"] = datetime.datetime.utcnow()
         
         Order = await self.db.orders.insert_one(order_data)
         return str(Order.inserted_id)
@@ -92,6 +92,11 @@ class OrderService:
         update_data = dict(order_data)
         if not update_data:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid order data")
+        
+        # If status is being updated to completed, set completed_at
+        if update_data.get("status") == "completed":
+            import datetime
+            update_data["completed_at"] = datetime.datetime.utcnow()
         
         update_data.pop("_id", None)
         await self.db.orders.update_one({"_id": order_object_id}, {"$set": update_data})

@@ -11,6 +11,8 @@ import '../ViewModel/SearchViewModel.dart';
 import '../Model/NearbyGigModel.dart';
 import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
 import 'package:near_me/Frontend/Features/Orders/ViewModel/customer_order_provider.dart';
+import 'package:near_me/Frontend/Features/Gigs/Views/GigDetailScreen.dart';
+import 'package:near_me/Frontend/Features/Gigs/Model/GigModel.dart';
 
 class CustomerSearchScreen extends ConsumerStatefulWidget {
   const CustomerSearchScreen({super.key});
@@ -236,7 +238,7 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
                         width: 50,
                         height: 50,
                         child: GestureDetector(
-                          onTap: () => _showGigDetails(gig),
+                          onTap: () => _navigateToGigDetails(gig),
                           child: _buildMapMarker(
                             initials,
                             const Color(0xFF8B5E3C),
@@ -633,260 +635,24 @@ class _CustomerSearchScreenState extends ConsumerState<CustomerSearchScreen> {
         .toUpperCase();
   }
 
-  /// Shows a bottom sheet with gig details when a marker is tapped.
-  void _showGigDetails(NearbyGigModel gig) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Title + Distance
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    gig.title,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF3E2723),
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFBCA073).withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${gig.distanceKm.toStringAsFixed(1)} km',
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF8B5E3C),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Category
-            Text(
-              gig.category,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 13,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Description
-            Text(
-              gig.description,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Price + Action
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '\$${gig.price.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF4E342E),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _showOrderDialog(gig);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4E342E),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'Order Now',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showOrderDialog(NearbyGigModel gig) async {
-    final requirementsController = TextEditingController();
-
-    await showDialog(
-      context: context,
-      builder: (dialogContext) {
-        bool isSubmitting = false;
-
-        return StatefulBuilder(
-          builder: (dialogContext, setDialogState) {
-            return AlertDialog(
-              title: Text('Order ${gig.title}'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Price: \$${gig.price.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF4E342E),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Requirements (optional)',
-                      style: TextStyle(fontFamily: 'Poppins'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: requirementsController,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        hintText: 'Write any extra details for the freelancer',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () async {
-                          final user = ref.read(authprovider).value;
-                          final customerId = user?.id;
-
-                          if (customerId == null || customerId.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please sign in again.'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          setDialogState(() => isSubmitting = true);
-                          try {
-                            await ref
-                                .read(customerOrderProvider.notifier)
-                                .placeOrder(
-                                  gigId: gig.id,
-                                  freelancerId: gig.freelancerId,
-                                  customerId: customerId,
-                                  amount: gig.price,
-                                  requirements: requirementsController.text
-                                      .trim(),
-                                );
-
-                            if (!mounted) return;
-                            Navigator.pop(dialogContext);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Order placed successfully!'),
-                                backgroundColor: Color(0xFF16A34A),
-                              ),
-                            );
-                          } catch (e) {
-                            if (!mounted) return;
-                            setDialogState(() => isSubmitting = false);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  e.toString().replaceAll('Exception: ', ''),
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4E342E),
-                    foregroundColor: Colors.white,
-                  ),
-                  child: isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Place Order'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+  void _navigateToGigDetails(NearbyGigModel gig) {
+    final gigModel = GigModel(
+      id: gig.id,
+      freelancerId: gig.freelancerId,
+      title: gig.title,
+      description: gig.description,
+      price: gig.price,
+      category: gig.category,
+      images: gig.images,
+      createdAt: DateTime.now(),
     );
 
-    requirementsController.dispose();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GigDetailScreen(gig: gigModel),
+      ),
+    );
   }
 
   /// Shows a filter sheet for category selection.

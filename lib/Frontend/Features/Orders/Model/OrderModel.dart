@@ -32,7 +32,7 @@ class OrderModel {
       freelancerId: json['freelancer_id'] ?? '',
       customerId: json['customer_id'] ?? '',
       status: json['status'] ?? 'pending',
-      price: (json['price'] ?? 0.0).toDouble(),
+      price: (json['amount'] ?? json['price'] ?? 0.0).toDouble(),
       description: json['description'],
       customerName: json['customer_name'],
       gigTitle: json['gig_title'],
@@ -51,7 +51,7 @@ class OrderModel {
       'freelancer_id': freelancerId,
       'customer_id': customerId,
       'status': status,
-      'price': price,
+      'amount': price,
       'description': description,
     };
   }

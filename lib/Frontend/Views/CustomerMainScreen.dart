@@ -9,6 +9,7 @@ import '../Theme/app_colors.dart';
 import '../Features/Search/Views/CustomerSearchScreen.dart';
 import '../Features/Inbox/Views/CustomerInboxScreen.dart';
 import '../Features/Profile/Views/CustomerProfileScreen.dart';
+import '../Features/Gigs/Views/GigDetailScreen.dart';
 
 class CustomerMainScreen extends ConsumerStatefulWidget {
   const CustomerMainScreen({super.key});
@@ -29,224 +30,13 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
     return 'Good evening';
   }
 
-  void _showGigDetails(GigModel gig) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              gig.title,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF3E2723),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              gig.category,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 13,
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              gig.description,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '\$${gig.price.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF4E342E),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _showOrderDialog(gig);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4E342E),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'Order Now',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
+  void _navigateToGigDetails(GigModel gig) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GigDetailScreen(gig: gig),
       ),
     );
-  }
-
-  Future<void> _showOrderDialog(GigModel gig) async {
-    final requirementsController = TextEditingController();
-
-    await showDialog(
-      context: context,
-      builder: (dialogContext) {
-        bool isSubmitting = false;
-
-        return StatefulBuilder(
-          builder: (dialogContext, setDialogState) {
-            return AlertDialog(
-              title: Text('Order ${gig.title}'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Price: \$${gig.price.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF4E342E),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Requirements (optional)',
-                      style: TextStyle(fontFamily: 'Poppins'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: requirementsController,
-                      maxLines: 4,
-                      decoration: const InputDecoration(
-                        hintText: 'Write any extra details for the freelancer',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () => Navigator.pop(dialogContext),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : () async {
-                          final user = ref.read(authprovider).value;
-                          final customerId = user?.id;
-
-                          if (customerId == null || customerId.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Please sign in again.'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          setDialogState(() => isSubmitting = true);
-                          try {
-                            await ref
-                                .read(customerOrderProvider.notifier)
-                                .placeOrder(
-                                  gigId: gig.id ?? '',
-                                  freelancerId: gig.freelancerId,
-                                  customerId: customerId,
-                                  amount: gig.price,
-                                  requirements: requirementsController.text
-                                      .trim(),
-                                );
-
-                            if (!mounted) return;
-                            Navigator.pop(dialogContext);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Order placed successfully!'),
-                                backgroundColor: Color(0xFF16A34A),
-                              ),
-                            );
-                          } catch (e) {
-                            if (!mounted) return;
-                            setDialogState(() => isSubmitting = false);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  e.toString().replaceAll('Exception: ', ''),
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4E342E),
-                    foregroundColor: Colors.white,
-                  ),
-                  child: isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Place Order'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-
-    requirementsController.dispose();
   }
 
   @override
@@ -790,7 +580,7 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                         final isLiked = _likedGigIds.contains(gig.id ?? '');
 
                         return GestureDetector(
-                          onTap: () => _showGigDetails(gig),
+                          onTap: () => _navigateToGigDetails(gig),
                           child: Stack(
                             children: [
                               ClipRRect(
@@ -1080,33 +870,46 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
   }
 
   Widget _buildStatDivider() {
-    return Container(height: 30, width: 1, color: Colors.white24);
+    return Container(
+      height: 30,
+      width: 1,
+      color: Colors.white10,
+    );
   }
 
-  Widget _buildCategoryItem(String label, IconData icon, bool isActive) {
+  Widget _buildCategoryItem(String name, IconData icon, bool isActive) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: isActive ? const Color(0xFF4E342E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isActive ? Colors.transparent : AppColors.border,
+          color: isActive ? const Color(0xFF4E342E) : AppColors.border,
         ),
+        boxShadow: [
+          if (isActive)
+            BoxShadow(
+              color: const Color(0xFF4E342E).withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+        ],
       ),
       child: Row(
         children: [
           Icon(
             icon,
-            color: isActive ? const Color(0xFFBCA073) : Colors.grey,
-            size: 20,
+            size: 18,
+            color: isActive ? Colors.white : const Color(0xFF4E342E),
           ),
           const SizedBox(width: 8),
           Text(
-            label,
+            name,
             style: TextStyle(
               fontFamily: 'Poppins',
-              color: isActive ? Colors.white : AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isActive ? Colors.white : const Color(0xFF4E342E),
             ),
           ),
         ],

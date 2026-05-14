@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../Model/OrderModel.dart';
 import '../Repository/OrderRepository.dart';
 
+import '../../analytics/analytics_provider.dart';
+
 final freelancerOrdersProvider =
     AsyncNotifierProvider<FreelancerOrdersNotifier, List<OrderModel>>(
       FreelancerOrdersNotifier.new,
@@ -32,6 +34,10 @@ class FreelancerOrdersNotifier extends AsyncNotifier<List<OrderModel>> {
 
   Future<void> updateOrderStatus(String orderId, String newStatus) async {
     await _repo.updateOrderStatus(orderId, newStatus);
+    
+    // Invalidate analytics so dashboard stats refresh
+    ref.invalidate(analyticsProvider);
+    
     // Refresh to get the updated list
     await refreshOrders();
   }

@@ -6,30 +6,7 @@ final analyticsRepositoryProvider = Provider<AnalyticsRepository>((ref) {
   return AnalyticsRepository();
 });
 
-// Since we need a userId, we expect it to be passed via a Family provider
-final totalEarningsProvider = FutureProvider.family<double, String>((
-  ref,
-  userId,
-) async {
-  final repo = ref.read(analyticsRepositoryProvider);
-  return repo.getTotalEarnings(userId);
-});
-
-final monthlyEarningsProvider = FutureProvider.family<double, String>((
-  ref,
-  userId,
-) async {
-  final repo = ref.read(analyticsRepositoryProvider);
-  return repo.getMonthlyEarnings(userId);
-});
-
-final totalOrdersProvider = FutureProvider.family<int, String>((
-  ref,
-  userId,
-) async {
-  final repo = ref.read(analyticsRepositoryProvider);
-  return repo.getTotalOrders(userId);
-});
+// Removed individual family providers in favor of a consolidated analyticsProvider
 
 
 class RecentOrder {
@@ -77,19 +54,21 @@ final analyticsProvider = FutureProvider<AnalyticsSummary>((ref) async {
   }
 
   final repo = ref.read(analyticsRepositoryProvider);
-  double totalEarnings = 0.0;
-  double monthEarnings = 0.0;
-  int totalOrders = 0;
+  final data = await repo.getFreelancerAnalytics();
   
-  try { totalEarnings = await repo.getTotalEarnings(userId); } catch (_) {}
-  try { monthEarnings = await repo.getMonthlyEarnings(userId); } catch (_) {}
-  try { totalOrders = await repo.getTotalOrders(userId); } catch (_) {}
-  
+  final List recentList = data['recent_orders'] ?? [];
+  final List<RecentOrder> recentOrders = recentList.map((o) => RecentOrder(
+    customerName: o['customer_name'] ?? 'Customer',
+    serviceName: o['gig_title'] ?? 'Service',
+    amount: (o['amount'] ?? 0.0).toDouble(),
+    status: o['status'] ?? 'pending',
+  )).toList();
+
   return AnalyticsSummary(
-    totalEarnings: totalEarnings,
-    totalOrders: totalOrders,
-    monthEarnings: monthEarnings,
-    pendingOrders: 0,
-    recentOrders: [],
+    totalEarnings: (data['total_earnings'] ?? 0.0).toDouble(),
+    totalOrders: (data['total_orders'] ?? 0).toInt(),
+    monthEarnings: (data['month_earnings'] ?? 0.0).toDouble(),
+    pendingOrders: (data['pending_orders'] ?? 0).toInt(),
+    recentOrders: recentOrders,
   );
 });
