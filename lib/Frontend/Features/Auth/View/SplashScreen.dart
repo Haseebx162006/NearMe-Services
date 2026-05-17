@@ -5,6 +5,7 @@ import 'package:near_me/Frontend/Features/Auth/View/SignupScreen.dart';
 import 'package:near_me/Frontend/Features/Search/Views/CustomerSearchScreen.dart';
 import 'package:near_me/Frontend/Features/analytics/analytics_screen.dart';
 import 'package:near_me/Frontend/Views/CustomerMainScreen.dart';
+import 'package:near_me/Frontend/Views/FreelancerDashboardScreen.dart';
 import 'package:near_me/core/storage/secure_storage.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -79,7 +80,7 @@ class _SplashScreenState extends State<SplashScreen>
       } else {
         // Redirect based on role
         if (_userRole == 'freelancer') {
-          nextScreen = const AnalyticsScreen(); // Freelancer Dashboard
+          nextScreen = const FreelancerDashboardScreen(); // Freelancer Dashboard
         } else {
           nextScreen = const CustomerMainScreen(); // Customer Homepage
         }

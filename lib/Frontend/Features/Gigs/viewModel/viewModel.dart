@@ -25,4 +25,36 @@ class GigViewmodel extends AsyncNotifier<List<GigModel>>{
       return await _repo.getAllGigs(limit: 100);
     });
   }
+
+  Future<bool> deleteGig(String gigId) async {
+    final success = await _repo.deleteGig(gigId);
+    if (success) {
+      await getMyGigs();
+    }
+    return success;
+  }
+
+  Future<bool> editGig({
+    required String gigId,
+    required String title,
+    required String description,
+    required double price,
+    required String category,
+    required String freelancerId,
+    List<String> images = const [],
+  }) async {
+    final success = await _repo.updateGig(
+      gigId: gigId,
+      title: title,
+      description: description,
+      price: price,
+      category: category,
+      freelancerId: freelancerId,
+      images: images,
+    );
+    if (success) {
+      await getMyGigs();
+    }
+    return success;
+  }
 }

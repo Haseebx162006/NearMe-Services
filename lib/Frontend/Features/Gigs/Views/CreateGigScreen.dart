@@ -11,9 +11,11 @@ import '../../Auth/ViewModel/authViewModel.dart';
 import '../../../Media/ViewModel/media_upload_provider.dart';
 import '../Repository/GigRepo.dart';
 import '../viewModel/viewModel.dart';
+import '../Model/GigModel.dart';
 
 class CreateGigScreen extends ConsumerStatefulWidget {
-  const CreateGigScreen({super.key});
+  final GigModel? gig;
+  const CreateGigScreen({super.key, this.gig});
 
   @override
   ConsumerState<CreateGigScreen> createState() => _CreateGigScreenState();
@@ -48,6 +50,12 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
   void initState() {
     super.initState();
     _detectLocation();
+    if (widget.gig != null) {
+      _titleController.text = widget.gig!.title;
+      _descriptionController.text = widget.gig!.description;
+      _priceController.text = widget.gig!.price.toString();
+      _selectedCategory = widget.gig!.category;
+    }
   }
 
   @override
@@ -106,7 +114,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
     }
   }
 
-  /// Creates the gig and saves the freelancer's location.
+  /// Creates/Updates the gig and saves the freelancer's location.
   Future<void> _submitGig() async {
     // Validate inputs
     final title = _titleController.text.trim();
@@ -136,7 +144,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
       return;
     }
 
-    if (_latitude == null || _longitude == null) {
+    if (widget.gig == null && (_latitude == null || _longitude == null)) {
       _showError(
         'Location not detected. Please enable GPS and tap the location button.',
       );
@@ -164,22 +172,35 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
         }
       }
 
-      // 1. Save the freelancer's GPS location to their user profile
-      //    This is CRITICAL for the $geoNear search to find them
-      await _repo.updateFreelancerLocation(
-        longitude: _longitude!,
-        latitude: _latitude!,
-      );
+      // 1. Save the freelancer's GPS location if detected
+      if (_latitude != null && _longitude != null) {
+        await _repo.updateFreelancerLocation(
+          longitude: _longitude!,
+          latitude: _latitude!,
+        );
+      }
 
-      // 2. Create the gig
-      await _repo.createGig(
-        title: title,
-        description: description,
-        price: price,
-        category: _selectedCategory,
-        freelancerId: user.id ?? '',
-        images: uploadedUrls,
-      );
+      // 2. Create or Update the gig
+      if (widget.gig != null) {
+        await _repo.updateGig(
+          gigId: widget.gig!.id!,
+          title: title,
+          description: description,
+          price: price,
+          category: _selectedCategory,
+          freelancerId: user.id ?? '',
+          images: uploadedUrls.isNotEmpty ? uploadedUrls : widget.gig!.images,
+        );
+      } else {
+        await _repo.createGig(
+          title: title,
+          description: description,
+          price: price,
+          category: _selectedCategory,
+          freelancerId: user.id ?? '',
+          images: uploadedUrls,
+        );
+      }
 
       if (!mounted) return;
 
@@ -187,15 +208,15 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
       ref.read(gigprovider.notifier).getMyGigs();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Gig created successfully! '),
-          backgroundColor: Color(0xFF16A34A),
+        SnackBar(
+          content: Text(widget.gig != null ? 'Gig updated successfully! ' : 'Gig created successfully! '),
+          backgroundColor: const Color(0xFF16A34A),
         ),
       );
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      _showError('Failed to create gig: $e');
+      _showError(widget.gig != null ? 'Failed to update gig: $e' : 'Failed to create gig: $e');
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -234,9 +255,9 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
           icon: const Icon(Icons.arrow_back, color: Color(0xFF3E2723)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Create New Gig',
-          style: TextStyle(
+        title: Text(
+          widget.gig != null ? 'Edit Gig' : 'Create New Gig',
+          style: const TextStyle(
             fontFamily: 'Poppins',
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -538,7 +559,7 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
                     child: CircularProgressIndicator(color: Color(0xFFBCA073)),
                   )
                 : CustomPrimaryButton(
-                    label: 'Create Gig',
+                    label: widget.gig != null ? 'Update Gig' : 'Create Gig',
                     onPressed: _submitGig,
                   ),
           ),

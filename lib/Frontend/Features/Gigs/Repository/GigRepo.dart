@@ -156,6 +156,56 @@ class GigRepository {
     throw Exception('Failed to create gig');
   }
 
+  /// Updates an existing gig on the backend.
+  Future<bool> updateGig({
+    required String gigId,
+    required String title,
+    required String description,
+    required double price,
+    required String category,
+    required String freelancerId,
+    List<String> images = const [],
+  }) async {
+    try {
+      final token = await _secureStorage.getToken();
+      if (token == null) return false;
+
+      final response = await _dio.put(
+        '/gigs/$gigId',
+        data: {
+          'title': title,
+          'description': description,
+          'price': price,
+          'category': category,
+          'freelancer_id': freelancerId,
+          'images': images,
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('UpdateGig Error: $e');
+      return false;
+    }
+  }
+
+  /// Deletes a gig on the backend.
+  Future<bool> deleteGig(String gigId) async {
+    try {
+      final token = await _secureStorage.getToken();
+      if (token == null) return false;
+
+      final response = await _dio.delete(
+        '/gigs/$gigId',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      print('DeleteGig Error: $e');
+      return false;
+    }
+  }
+
   /// Saves the freelancer's GPS coordinates to their user profile.
   /// This is needed so $geoNear search can find them.
   Future<bool> updateFreelancerLocation({
