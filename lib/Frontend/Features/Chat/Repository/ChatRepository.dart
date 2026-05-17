@@ -9,11 +9,14 @@ class ChatRepository {
 
   // --- HTTP Methods ---
 
-  Future<ConversationModel> startConversation(String freelancerId, String gigId) async {
-    final response = await _dio.post('/chat/start', data: {
-      'freelancer_id': freelancerId,
-      'gig_id': gigId,
-    });
+  Future<ConversationModel> startConversation(
+    String freelancerId,
+    String gigId,
+  ) async {
+    final response = await _dio.post(
+      '/chat/start',
+      data: {'freelancer_id': freelancerId, 'gig_id': gigId},
+    );
     return ConversationModel.fromJson(response.data);
   }
 
@@ -23,12 +26,15 @@ class ChatRepository {
     required String text,
     String messageType = 'text',
   }) async {
-    final response = await _dio.post('/chat/send', data: {
-      'conversation_id': conversationId,
-      'receiver_id': receiverId,
-      'text': text,
-      'message_type': messageType,
-    });
+    final response = await _dio.post(
+      '/chat/send',
+      data: {
+        'conversation_id': conversationId,
+        'receiver_id': receiverId,
+        'text': text,
+        'message_type': messageType,
+      },
+    );
     return MessageModel.fromJson(response.data);
   }
 
@@ -39,11 +45,15 @@ class ChatRepository {
         .toList();
   }
 
-  Future<List<MessageModel>> getMessages(String conversationId, {int limit = 50, int skip = 0}) async {
-    final response = await _dio.get('/chat/messages/$conversationId', queryParameters: {
-      'limit': limit,
-      'skip': skip,
-    });
+  Future<List<MessageModel>> getMessages(
+    String conversationId, {
+    int limit = 50,
+    int skip = 0,
+  }) async {
+    final response = await _dio.get(
+      '/chat/messages/$conversationId',
+      queryParameters: {'limit': limit, 'skip': skip},
+    );
     return (response.data as List)
         .map((e) => MessageModel.fromJson(e))
         .toList();
@@ -56,8 +66,22 @@ class ChatRepository {
   // --- WebSocket Methods ---
 
   WebSocketChannel connectWebSocket(String userId) {
-    // Replace with your actual server WS URL
-    final wsUrl = 'ws://192.168.100.4:8000/chat/ws/$userId';
+    // Dynamically derive WebSocket URL from API_BASE_URL
+    final String apiBaseUrl = Dioclient.baseUrl;
+
+    // Convert https://... to wss://... or http://... to ws://...
+    String wsBase;
+    if (apiBaseUrl.startsWith('https://')) {
+      wsBase = apiBaseUrl.replaceFirst('https://', 'wss://');
+    } else if (apiBaseUrl.startsWith('http://')) {
+      wsBase = apiBaseUrl.replaceFirst('http://', 'ws://');
+    } else {
+      // Fallback
+      wsBase = 'ws://192.168.100.4:8000';
+    }
+
+    final wsUrl = '$wsBase/chat/ws/$userId';
+    print('[WebSocket] Connecting to: $wsUrl');
     return WebSocketChannel.connect(Uri.parse(wsUrl));
   }
 

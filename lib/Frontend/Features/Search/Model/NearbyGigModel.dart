@@ -1,3 +1,5 @@
+import 'package:near_me/Frontend/Utils/mongo_id.dart';
+
 /// Model for a gig returned by the /search/nearby-gigs endpoint.
 /// Includes distance_km which shows how far this gig's freelancer is.
 class NearbyGigModel {
@@ -26,8 +28,8 @@ class NearbyGigModel {
   /// Creates a NearbyGigModel from the JSON returned by the backend.
   factory NearbyGigModel.fromJson(Map<String, dynamic> json) {
     return NearbyGigModel(
-      id: json['_id'] ?? json['gig_id'] ?? '',
-      freelancerId: json['freelancer_id'] ?? '',
+      id: parseMongoId(json['_id'] ?? json['gig_id']),
+      freelancerId: parseMongoId(json['freelancer_id']),
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       category: json['category'] ?? '',

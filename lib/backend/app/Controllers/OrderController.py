@@ -33,6 +33,12 @@ class OrderController:
         
     async def update_order_status(self, order_id: str, new_status: str):
         return await self.service.update_order(order_id, {"status": new_status})
+
+    async def customer_has_pending_review(self, customer_id: str):
+        return await self.service.customer_has_pending_review(customer_id)
+
+    async def submit_review(self, order_id: str, customer_id: str, rating: int, comment=None):
+        return await self.service.submit_review(order_id, customer_id, rating, comment)
     
     
     

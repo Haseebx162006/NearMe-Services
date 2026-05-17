@@ -22,6 +22,11 @@ class AuthRepository {
         final token = response.data['access_token'];
         if (token != null) {
           await _secureStorage.saveToken(token);
+          // Fetch user profile immediately after login to save the role
+          final user = await getUserData();
+          if (user != null) {
+            await _secureStorage.saveRole(user.role);
+          }
           return token;
         }
       }
@@ -60,6 +65,8 @@ class AuthRepository {
         final token = response.data['access_token'];
         if (token != null) {
           await _secureStorage.saveToken(token);
+          // Save the role from the user object during signup
+          await _secureStorage.saveRole(user.role);
           return token;
         }
       }
@@ -111,6 +118,50 @@ class AuthRepository {
     } catch (e) {
       throw Exception("Failed to fetch name: $e");
     }
+  }
+
+  Future<Map<String, dynamic>?> getFreelancerProfile(String freelancerId) async {
+    final id = freelancerId.trim();
+    if (id.isEmpty) {
+      throw Exception('Invalid freelancer id');
+    }
+
+    final token = await _secureStorage.getToken();
+    final options = Options(
+      headers: {
+        if (token != null) 'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    final paths = [
+      '/gigs/freelancer-profile/$id',
+      '/auth/freelancer/$id',
+    ];
+
+    DioException? lastError;
+    for (final path in paths) {
+      try {
+        final response = await _dio.get(path, options: options);
+        if (response.statusCode == 200 && response.data is Map) {
+          return Map<String, dynamic>.from(response.data);
+        }
+      } on DioException catch (e) {
+        lastError = e;
+        if (e.response?.statusCode == 404) {
+          continue;
+        }
+        final msg = e.response?.data is Map
+            ? e.response!.data['detail']?.toString()
+            : null;
+        throw Exception(msg ?? 'Could not load freelancer profile');
+      }
+    }
+
+    final msg = lastError?.response?.data is Map
+        ? lastError!.response!.data['detail']?.toString()
+        : null;
+    throw Exception(msg ?? 'Freelancer profile not available');
   }
 
   Future<UserModel?> getUserData() async {

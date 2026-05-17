@@ -128,6 +128,12 @@ async def get_me(user):
         
     return user_dict
 
+async def get_freelancer_profile(freelancer_id: str):
+    from Service.UserService import UserService
+
+    return await UserService().get_public_profile(freelancer_id)
+
+
 async def update_location(user, longitude: float, latitude: float):
     from bson import ObjectId
     try:

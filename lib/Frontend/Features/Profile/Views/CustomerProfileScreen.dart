@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../Auth/ViewModel/authViewModel.dart';
 import '../../../Theme/app_colors.dart';
 import '../../Auth/View/LoginScreen.dart';
+import '../../Orders/Views/CustomerOrderHistoryScreen.dart';
+import 'CustomerSettingsScreen.dart';
 
 class CustomerProfileScreen extends ConsumerWidget {
   const CustomerProfileScreen({super.key});
@@ -103,13 +105,28 @@ class CustomerProfileScreen extends ConsumerWidget {
                   Icons.history_outlined,
                   'Order History',
                   'View past bookings',
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const CustomerOrderHistoryScreen(),
+                      ),
+                    );
+                  },
                 ),
                 _buildProfileOption(
                   Icons.settings_outlined,
                   'Settings',
                   'Notifications, privacy',
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CustomerSettingsScreen(),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 32),
                 ListTile(

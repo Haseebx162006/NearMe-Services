@@ -5,6 +5,7 @@ from Controllers.AuthController import (
     signup as signup_controller,
     getname as getname_controller,
     get_me as get_me_controller,
+    get_freelancer_profile as get_freelancer_profile_controller,
     update_location as update_location_controller,
 )
 from core.access_token import get_current_user
@@ -31,6 +32,15 @@ async def getname(user = Depends(get_current_user)):
 @router.get("/me")
 async def get_me(user = Depends(get_current_user)):
     return await get_me_controller(user)
+
+
+@router.get("/freelancer/{freelancer_id}")
+async def get_freelancer_profile(
+    freelancer_id: str,
+    user=Depends(get_current_user),
+):
+    return await get_freelancer_profile_controller(freelancer_id)
+
 
 @router.patch("/update-location")
 async def update_location(

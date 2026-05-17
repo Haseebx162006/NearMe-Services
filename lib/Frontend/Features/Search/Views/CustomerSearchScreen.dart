@@ -9,8 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../../Theme/app_colors.dart';
 import '../ViewModel/SearchViewModel.dart';
 import '../Model/NearbyGigModel.dart';
-import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
-import 'package:near_me/Frontend/Features/Orders/ViewModel/customer_order_provider.dart';
+
 import 'package:near_me/Frontend/Features/Gigs/Views/GigDetailScreen.dart';
 import 'package:near_me/Frontend/Features/Gigs/Model/GigModel.dart';
 

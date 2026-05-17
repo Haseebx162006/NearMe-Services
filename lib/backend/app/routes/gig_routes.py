@@ -27,6 +27,11 @@ async def get_my_gigs(current_user: dict = Depends(role_checker("freelancer"))):
     return await controller.get_gigs_by_freelancer(str(current_user["_id"]))
 
 
+@router.get("/freelancer-profile/{freelancer_id}")
+async def get_freelancer_profile(freelancer_id: str):
+    return await controller.get_freelancer_profile(freelancer_id)
+
+
 @router.get("/{gig_id}")
 async def get_gig_by_id(gig_id: str):
     return await controller.get_gig_by_id(gig_id)

@@ -11,7 +11,7 @@ class GigViewmodel extends AsyncNotifier<List<GigModel>>{
   final _repo = GigRepository();
   @override
   FutureOr<List<GigModel>> build() {
-    return _repo.getAllGigs();
+    return _repo.getAllGigs(limit: 100);
   }
   Future<void> getMyGigs() async {
     state = const AsyncLoading();
@@ -22,7 +22,7 @@ class GigViewmodel extends AsyncNotifier<List<GigModel>>{
   Future<void> refreshGigs() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      return await _repo.getAllGigs();
+      return await _repo.getAllGigs(limit: 100);
     });
   }
 }

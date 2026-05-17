@@ -97,68 +97,81 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
             const SizedBox(height: 20),
             // Header: Location and Notifications
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on,
-                          color: Color(0xFFBCA073),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Consumer(
-                          builder: (context, ref, child) {
-                            final user = ref.watch(authprovider).value;
-                            final radius = user?.preferredRadiusKm ?? 10;
-                            return Text(
-                              'Within $radius km radius',
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on,
+                            color: Color(0xFFBCA073),
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Consumer(
+                              builder: (context, ref, child) {
+                                final user = ref.watch(authprovider).value;
+                                final radius = user?.preferredRadiusKm ?? 10;
+                                return Text(
+                                  'Within $radius km radius',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final authState = ref.watch(authprovider);
+                          return authState.when(
+                            data: (user) => Text(
+                              '${_getGreeting()}, ${user?.name ?? 'User'}!',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontFamily: 'Poppins',
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF3E2723),
                               ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final authState = ref.watch(authprovider);
-                        return authState.when(
-                          data: (user) => Text(
-                            '${_getGreeting()}, ${user?.name ?? 'User'}!',
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF3E2723),
                             ),
-                          ),
-                          loading: () => Text(
-                            '${_getGreeting()}...',
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 20,
+                            loading: () => Text(
+                              '${_getGreeting()}...',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 20,
+                              ),
                             ),
-                          ),
-                          error: (_, _) => Text(
-                            '${_getGreeting()}, User!',
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 20,
+                            error: (_, _) => Text(
+                              '${_getGreeting()}, User!',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 20,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 8),
                 Row(
                   children: [
                     GestureDetector(
@@ -296,24 +309,31 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildStatItem(
-                            Icons.bolt,
-                            activeCount.toString(),
-                            'Active Now',
+                          Expanded(
+                            child: _buildStatItem(
+                              Icons.bolt,
+                              activeCount.toString(),
+                              'Active Now',
+                            ),
                           ),
                           _buildStatDivider(),
-                          _buildStatItem(
-                            Icons.star,
-                            avgRating > 0 ? avgRating.toStringAsFixed(1) : '-',
-                            'Avg Rating',
+                          Expanded(
+                            child: _buildStatItem(
+                              Icons.star,
+                              avgRating > 0
+                                  ? avgRating.toStringAsFixed(1)
+                                  : '-',
+                              'Avg Rating',
+                            ),
                           ),
                           _buildStatDivider(),
-                          _buildStatItem(
-                            Icons.category_outlined,
-                            uniqueCategories.toString(),
-                            'Categories',
+                          Expanded(
+                            child: _buildStatItem(
+                              Icons.category_outlined,
+                              uniqueCategories.toString(),
+                              'Categories',
+                            ),
                           ),
                         ],
                       ),
@@ -437,13 +457,15 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                     ),
                     child: const Icon(Icons.stars, color: Colors.white),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'New User Offer ',
+                          'New User Offer',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.bold,
@@ -452,6 +474,8 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                         ),
                         Text(
                           'Get 20% off your first booking',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontFamily: 'Poppins',
                             fontSize: 12,
@@ -461,6 +485,7 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -475,29 +500,21 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
+                        horizontal: 12,
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Row(
-                        children: [
-                          Text(
-                            'Claim',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward,
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ],
+                      child: const Text(
+                        'Claim',
+                        style: TextStyle(
+                          fontFamily: 'Poppins',
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ),
@@ -723,45 +740,21 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
                                       ),
                                       const SizedBox(height: 12),
                                       Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
                                         children: [
-                                          Row(
-                                            children: [
-                                              const CircleAvatar(
-                                                radius: 12,
-                                                backgroundColor: Colors.white,
-                                                child: Icon(
-                                                  Icons.person,
-                                                  size: 16,
-                                                  color: Color(0xFF4E342E),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                gig.category,
-                                                style: const TextStyle(
-                                                  fontFamily: 'Poppins',
-                                                  color: Colors.white,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 12),
-                                              const Icon(
-                                                Icons.star,
-                                                color: Color(0xFFBCA073),
-                                                size: 14,
-                                              ),
-                                              Text(
-                                                ' ${gig.rating.toStringAsFixed(1)}',
-                                                style: const TextStyle(
-                                                  fontFamily: 'Poppins',
-                                                  color: Colors.white,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
+                                          const Icon(
+                                            Icons.star,
+                                            color: Color(0xFFBCA073),
+                                            size: 14,
                                           ),
+                                          Text(
+                                            gig.rating.toStringAsFixed(1),
+                                            style: const TextStyle(
+                                              fontFamily: 'Poppins',
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                          const Spacer(),
                                           Container(
                                             padding: const EdgeInsets.symmetric(
                                               horizontal: 12,

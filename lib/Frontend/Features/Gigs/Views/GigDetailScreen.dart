@@ -3,9 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../Auth/ViewModel/authViewModel.dart';
 import '../Model/GigModel.dart';
 import '../../Orders/ViewModel/customer_order_provider.dart';
+import '../../Orders/ViewModel/customer_order_history_provider.dart';
 import '../../../Theme/app_colors.dart';
 import '../../Chat/ViewModel/chatProvider.dart';
 import '../../Chat/Views/ChatScreen.dart';
+import '../../Profile/Views/FreelancerProfileScreen.dart';
+import '../Repository/GigRepo.dart';
+import '../../../Utils/mongo_id.dart';
 
 class GigDetailScreen extends ConsumerStatefulWidget {
   final GigModel gig;
@@ -18,7 +22,28 @@ class GigDetailScreen extends ConsumerStatefulWidget {
 
 class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
   final TextEditingController _requirementsController = TextEditingController();
+  final _gigRepo = GigRepository();
   bool _isSubmitting = false;
+  late GigModel _gig;
+
+  @override
+  void initState() {
+    super.initState();
+    _gig = widget.gig;
+    _refreshGigIfNeeded();
+  }
+
+  Future<void> _refreshGigIfNeeded() async {
+    if (_gig.id == null || _gig.id!.isEmpty) return;
+    if (parseMongoId(_gig.freelancerId).isNotEmpty &&
+        _gig.freelancerName != null) {
+      return;
+    }
+    final full = await _gigRepo.getGigById(_gig.id!);
+    if (full != null && mounted) {
+      setState(() => _gig = full);
+    }
+  }
 
   @override
   void dispose() {
@@ -43,11 +68,28 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
     setState(() => _isSubmitting = true);
 
     try {
+      final hasPending = await ref.read(pendingReviewProvider.future);
+      if (hasPending) {
+        if (!mounted) return;
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Please review your completed order before placing a new one. '
+              'Go to Profile > Order History.',
+            ),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+
       await ref.read(customerOrderProvider.notifier).placeOrder(
-            gigId: widget.gig.id ?? '',
-            freelancerId: widget.gig.freelancerId,
+            gigId: _gig.id ?? '',
+            freelancerId: _gig.freelancerId,
             customerId: customerId,
-            amount: widget.gig.price,
+            amount: _gig.price,
             requirements: _requirementsController.text.trim(),
           );
 
@@ -83,7 +125,7 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = widget.gig.images.isNotEmpty;
+    final hasImage = _gig.images.isNotEmpty;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -101,7 +143,7 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
             flexibleSpace: FlexibleSpaceBar(
               background: hasImage
                   ? Image.network(
-                      widget.gig.images.first,
+                      _gig.images.first,
                       fit: BoxFit.cover,
                     )
                   : Container(
@@ -127,7 +169,7 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              widget.gig.title,
+                              _gig.title,
                               style: const TextStyle(
                                 fontFamily: 'Poppins',
                                 fontSize: 24,
@@ -143,7 +185,7 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
-                                widget.gig.category,
+                                _gig.category,
                                 style: const TextStyle(
                                   fontFamily: 'Poppins',
                                   fontSize: 12,
@@ -156,7 +198,7 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
                         ),
                       ),
                       Text(
-                        '\$${widget.gig.price.toStringAsFixed(0)}',
+                        '\$${_gig.price.toStringAsFixed(0)}',
                         style: const TextStyle(
                           fontFamily: 'Poppins',
                           fontSize: 28,
@@ -166,8 +208,98 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 20),
+                  GestureDetector(
+                    onTap: () {
+                      final fid = parseMongoId(_gig.freelancerId);
+                      if (fid.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Freelancer info not available yet'),
+                          ),
+                        );
+                        return;
+                      }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FreelancerProfileScreen(
+                            freelancerId: fid,
+                            sourceGig: _gig,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFBF8F6),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 22,
+                            backgroundColor: Color(0xFF4E342E),
+                            child: Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Freelancer',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                Text(
+                                  _gig.freelancerName ?? 'View profile and ratings',
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF3E2723),
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.star,
+                                      size: 14,
+                                      color: Color(0xFFBCA073),
+                                    ),
+                                    Text(
+                                      ' ${(_gig.freelancerRating ?? _gig.rating).toStringAsFixed(1)} rating',
+                                      style: const TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 12,
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: AppColors.textHint,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
-                  
+
                   // Description
                   const Text(
                     'About this Gig',
@@ -180,7 +312,7 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    widget.gig.description,
+                    _gig.description,
                     style: const TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 15,
@@ -242,8 +374,8 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
                         try {
                           final chatRepo = ref.read(chatRepositoryProvider);
                           final conversation = await chatRepo.startConversation(
-                            widget.gig.freelancerId,
-                            widget.gig.id ?? '',
+                            _gig.freelancerId,
+                            _gig.id ?? '',
                           );
                           
                           // Set the active chat ID

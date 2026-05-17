@@ -8,7 +8,6 @@ import 'package:near_me/Frontend/Views/FreelancerDashboardScreen.dart';
 import 'LoginScreen.dart';
 import '../../../Theme/app_colors.dart';
 import '../../../Components/custom_textfield.dart';
-import '../../../Components/social_button.dart';
 import '../../../Components/custom_button.dart';
 
 class Signupscreen extends ConsumerStatefulWidget {
@@ -164,11 +163,6 @@ class _SignupscreenState extends ConsumerState<Signupscreen> {
                 hintText: '••••••••',
                 prefixIcon: Icons.lock_outline,
                 isPassword: true,
-                suffixIcon: Icon(
-                  Icons.visibility_outlined,
-                  color: AppColors.textSecondary,
-                  size: 20,
-                ),
               ),
               const SizedBox(height: 24),
 
@@ -370,37 +364,6 @@ class _SignupscreenState extends ConsumerState<Signupscreen> {
                     ),
                   ],
                 ),
-              const SizedBox(height: 40),
-
-              // Divider
-              const Row(
-                children: [
-                  Expanded(child: Divider(color: AppColors.border)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'or sign up with',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 12,
-                        color: AppColors.textHint,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: AppColors.border)),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // Social Buttons
-              const Row(
-                children: [
-                  SocialButton(
-                    iconPath: 'lib/Assets/google_logo.png',
-                    label: 'Google',
-                  ),
-                ],
-              ),
               const SizedBox(height: 40),
 
               // Login Link

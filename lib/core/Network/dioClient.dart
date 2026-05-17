@@ -1,17 +1,22 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../storage/secure_storage.dart';
 
 class Dioclient {
-  static final String _baseUrl = 
-      dotenv.env['API_BASE_URL'] ?? 'http://192.168.100.4:8000';
+  static final String baseUrl =
+      (dotenv.env['API_BASE_URL'] != null &&
+          dotenv.env['API_BASE_URL']!.startsWith('https'))
+      ? dotenv.env['API_BASE_URL']!
+      : (Platform.isAndroid ? 'http://10.0.2.2:8000' : 'http://localhost:8000');
 
   static final Dio dio = _initDio();
 
   static Dio _initDio() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: _baseUrl,
+        baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         headers: {
@@ -27,7 +32,7 @@ class Dioclient {
         onRequest: (options, handler) async {
           final storage = SecureStorage();
           final token = await storage.getToken();
-          
+
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
@@ -36,8 +41,8 @@ class Dioclient {
         onError: (DioException e, handler) {
           // Centralized error mapping
           String errorMessage = 'Something went wrong';
-          
-          if (e.type == DioExceptionType.connectionTimeout || 
+
+          if (e.type == DioExceptionType.connectionTimeout ||
               e.type == DioExceptionType.receiveTimeout) {
             errorMessage = 'Connection timed out. Please check your internet.';
           } else if (e.type == DioExceptionType.connectionError) {
@@ -53,10 +58,7 @@ class Dioclient {
     );
 
     // Optional: Add logging for better debugging (only in debug mode recommended for prod)
-    dio.interceptors.add(LogInterceptor(
-      requestBody: true,
-      responseBody: true,
-    ));
+    dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
 
     return dio;
   }

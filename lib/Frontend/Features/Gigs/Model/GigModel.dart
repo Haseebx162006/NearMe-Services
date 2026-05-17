@@ -1,6 +1,15 @@
+import 'package:near_me/Frontend/Utils/mongo_id.dart';
+
 class GigModel {
   final String? id;
   final String freelancerId;
+  final String? freelancerName;
+  final double? freelancerRating;
+  final int? freelancerReviewCount;
+  final String? freelancerEmail;
+  final String? freelancerPhone;
+  final String? freelancerBio;
+  final List<String> freelancerSkills;
   final String title;
   final String description;
   final double price;
@@ -15,6 +24,13 @@ class GigModel {
   GigModel({
     this.id,
     required this.freelancerId,
+    this.freelancerName,
+    this.freelancerRating,
+    this.freelancerReviewCount,
+    this.freelancerEmail,
+    this.freelancerPhone,
+    this.freelancerBio,
+    this.freelancerSkills = const [],
     required this.title,
     required this.description,
     required this.price,
@@ -29,8 +45,19 @@ class GigModel {
 
   factory GigModel.fromJson(Map<String, dynamic> json) {
     return GigModel(
-      id: json['_id'],
-      freelancerId: json['freelancer_id'] ?? '',
+      id: parseMongoId(json['_id']),
+      freelancerId: parseMongoId(json['freelancer_id']),
+      freelancerName: json['freelancer_name']?.toString(),
+      freelancerRating: json['freelancer_rating'] != null
+          ? (json['freelancer_rating'] as num).toDouble()
+          : null,
+      freelancerReviewCount: json['freelancer_review_count'] != null
+          ? (json['freelancer_review_count'] as num).toInt()
+          : null,
+      freelancerEmail: json['freelancer_email']?.toString(),
+      freelancerPhone: json['freelancer_phone']?.toString(),
+      freelancerBio: json['freelancer_bio']?.toString(),
+      freelancerSkills: List<String>.from(json['freelancer_skills'] ?? []),
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       price: (json['price'] ?? 0.0).toDouble(),

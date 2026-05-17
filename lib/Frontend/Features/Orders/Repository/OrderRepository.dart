@@ -7,6 +7,84 @@ class OrderRepository {
   final _dio = Dioclient.dio;
   final _secureStorage = SecureStorage();
 
+  Future<List<OrderModel>> getCustomerOrders() async {
+    try {
+      final token = await _secureStorage.getToken();
+      if (token == null) return [];
+
+      final response = await _dio.get(
+        '/orders/customer/my-orders',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200) {
+        final List data =
+            response.data is List ? response.data : [response.data];
+        return data
+            .map((json) => OrderModel.fromJson(Map<String, dynamic>.from(json)))
+            .toList();
+      }
+      return [];
+    } on DioException catch (e) {
+      print('GetCustomerOrders Error: $e');
+      return [];
+    }
+  }
+
+  Future<bool> hasPendingReview() async {
+    try {
+      final token = await _secureStorage.getToken();
+      if (token == null) return false;
+
+      final response = await _dio.get(
+        '/orders/customer/pending-review',
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode == 200 && response.data is Map) {
+        return response.data['has_pending_review'] == true;
+      }
+      return false;
+    } catch (e) {
+      print('HasPendingReview Error: $e');
+      return false;
+    }
+  }
+
+  Future<void> submitReview({
+    required String orderId,
+    required int rating,
+    String? comment,
+  }) async {
+    try {
+      final token = await _secureStorage.getToken();
+      if (token == null) throw Exception('Not authenticated');
+
+      final response = await _dio.post(
+        '/orders/$orderId/review',
+        data: {
+          'rating': rating,
+          if (comment != null && comment.trim().isNotEmpty)
+            'comment': comment.trim(),
+        },
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to submit review');
+      }
+    } on DioException catch (e) {
+      String errorMessage = 'Could not submit review. Please try again.';
+      if (e.response?.data != null) {
+        final data = e.response!.data;
+        if (data is Map && data.containsKey('detail')) {
+          errorMessage = data['detail'].toString();
+        }
+      }
+      throw Exception(errorMessage);
+    }
+  }
+
   Future<String> createOrder({
     required String gigId,
     required String freelancerId,

@@ -46,9 +46,27 @@ class GigService:
             
         return ranked_gigs
 
-    def _serialize_gig(self, gig: dict) -> dict:
+    async def _serialize_gig(self, gig: dict) -> dict:
         serialized = dict(gig)
         serialized["_id"] = str(serialized["_id"])
+        if "freelancer_id" in serialized:
+            fid = str(serialized["freelancer_id"])
+            serialized["freelancer_id"] = fid
+            try:
+                user = await self.db.users.find_one(
+                    {"_id": validate_object_id(fid)}
+                )
+                if user:
+                    serialized["freelancer_name"] = user.get("name", "Freelancer")
+                    serialized["freelancer_rating"] = float(
+                        user.get("rating") or 0.0
+                    )
+                    serialized["freelancer_email"] = user.get("email", "")
+                    serialized["freelancer_phone"] = user.get("phone_number", "")
+                    serialized["freelancer_bio"] = user.get("profile_bio", "") or ""
+                    serialized["freelancer_skills"] = user.get("skills", []) or []
+            except Exception:
+                pass
         return serialized
     
     async def create_gig(self, data: dict, freelancer_id: str):
@@ -78,25 +96,40 @@ class GigService:
         
         await self.db.gigs.delete_one({"_id": gig_object_id})
         return {"message": "Gig deleted successfully"}
-    
-    
+
     async def get_gig_by_id(self, gig_id: str):
         gig = await self.db.gigs.find_one({"_id": validate_object_id(gig_id)})
         if not gig:
             raise HTTPException(status_code=404, detail="Gig not found")
-        return self._serialize_gig(gig)
-    
+        serialized = await self._serialize_gig(gig)
+        fid = serialized.get("freelancer_id")
+        if fid:
+            try:
+                from Service.UserService import UserService
+
+                profile = await UserService().get_public_profile(fid)
+                serialized["freelancer_name"] = profile.get("name")
+                serialized["freelancer_rating"] = profile.get("rating")
+                serialized["freelancer_review_count"] = profile.get("review_count")
+            except Exception:
+                pass
+        return serialized
+
     async def get_gigs_by_freelancer(self, freelancer_id: str):
-        gigs= await self.db.gigs.find({"freelancer_id": freelancer_id}).to_list(length=100)
+        gigs = await self.db.gigs.find({"freelancer_id": freelancer_id}).to_list(
+            length=100
+        )
         if not gigs:
-            raise HTTPException(status_code=404, detail="No gigs found for this freelancer")
-        return [self._serialize_gig(gig) for gig in gigs]
-    
+            raise HTTPException(
+                status_code=404, detail="No gigs found for this freelancer"
+            )
+        return [await self._serialize_gig(gig) for gig in gigs]
+
     async def get_all_gigs(self):
         gigs = await self.db.gigs.find().to_list(length=100)
         if not gigs:
             raise HTTPException(status_code=404, detail="No gigs found")
-        return [self._serialize_gig(gig) for gig in gigs]
+        return [await self._serialize_gig(gig) for gig in gigs]
     
     
     async def update_gig(self, gig_id: str, data: dict, freelancer_id: str):

@@ -9,7 +9,6 @@ import 'package:near_me/Frontend/Views/AdminMainScreen.dart';
 import 'SignupScreen.dart';
 import '../../../Theme/app_colors.dart';
 import '../../../Components/custom_textfield.dart';
-import '../../../Components/social_button.dart';
 import '../../../Components/custom_button.dart';
 
 class Loginscreen extends ConsumerStatefulWidget {
@@ -170,11 +169,6 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
                 hintText: '••••••••',
                 prefixIcon: Icons.lock_outline,
                 isPassword: true,
-                suffixIcon: const Icon(
-                  Icons.visibility_outlined,
-                  color: AppColors.textSecondary,
-                  size: 20,
-                ),
               ),
 
               const SizedBox(height: 20),
@@ -238,38 +232,6 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
                     ),
                   ],
                 ),
-
-              const SizedBox(height: 40),
-
-              // Divider
-              const Row(
-                children: [
-                  Expanded(child: Divider(color: AppColors.border)),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'or continue with',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 12,
-                        color: AppColors.textHint,
-                      ),
-                    ),
-                  ),
-                  Expanded(child: Divider(color: AppColors.border)),
-                ],
-              ),
-
-              const SizedBox(height: 32),
-
-              const Row(
-                children: [
-                  SocialButton(
-                    iconPath: 'lib/Assets/google_logo.png',
-                    label: 'Google',
-                  ),
-                ],
-              ),
 
               const SizedBox(height: 48),
 

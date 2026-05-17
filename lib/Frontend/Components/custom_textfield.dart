@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../Theme/app_colors.dart';
 
-class CustomTextField extends StatelessWidget {
+class CustomTextField extends StatefulWidget {
   final String label;
   final String hintText;
   final IconData prefixIcon;
@@ -20,12 +20,19 @@ class CustomTextField extends StatelessWidget {
   });
 
   @override
+  State<CustomTextField> createState() => _CustomTextFieldState();
+}
+
+class _CustomTextFieldState extends State<CustomTextField> {
+  bool _obscure = true;
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label,
+          widget.label,
           style: const TextStyle(
             fontFamily: 'Poppins',
             fontSize: 14,
@@ -35,25 +42,36 @@ class CustomTextField extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         TextField(
-          controller: controller,
-          obscureText: isPassword,
+          controller: widget.controller,
+          obscureText: widget.isPassword ? _obscure : false,
           style: const TextStyle(
             fontFamily: 'Poppins',
             fontSize: 14,
             color: AppColors.textPrimary,
           ),
           decoration: InputDecoration(
-            hintText: hintText,
+            hintText: widget.hintText,
             hintStyle: const TextStyle(
               fontFamily: 'Poppins',
               color: AppColors.textHint,
             ),
             prefixIcon: Icon(
-              prefixIcon,
+              widget.prefixIcon,
               color: AppColors.textSecondary,
               size: 20,
             ),
-            suffixIcon: suffixIcon,
+            suffixIcon: widget.isPassword
+                ? IconButton(
+                    icon: Icon(
+                      _obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _obscure = !_obscure),
+                  )
+                : widget.suffixIcon,
             filled: true,
             fillColor: AppColors.background,
             contentPadding: const EdgeInsets.symmetric(
