@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 
 from Controllers.GigController import Gigcontroller
 from core.checker import role_checker
+from core.access_token import get_current_user
 from schema.gigSchema import GigSchema
 
 router = APIRouter(prefix="/gigs", tags=["Gigs"])
