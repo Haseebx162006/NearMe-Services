@@ -125,8 +125,12 @@ class GigService:
             )
         return [await self._serialize_gig(gig) for gig in gigs]
 
-    async def get_all_gigs(self):
-        gigs = await self.db.gigs.find().to_list(length=100)
+    async def get_all_gigs(self, freelancer_id: str = None):
+        query = {}
+        if freelancer_id:
+            query["freelancer_id"] = freelancer_id
+            
+        gigs = await self.db.gigs.find(query).to_list(length=100)
         if not gigs:
             raise HTTPException(status_code=404, detail="No gigs found")
         return [await self._serialize_gig(gig) for gig in gigs]

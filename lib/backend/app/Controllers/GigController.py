@@ -22,8 +22,8 @@ class Gigcontroller:
     async def get_gigs_by_freelancer(self, freelancer_id: str):
         return await self.service.get_gigs_by_freelancer(freelancer_id)
     
-    async def get_all_gigs(self, sort_by: str = "rating", limit: int = 10):
-        gigs = await self.service.get_all_gigs()
+    async def get_all_gigs(self, sort_by: str = "rating", limit: int = 10, freelancer_id: str = None):
+        gigs = await self.service.get_all_gigs(freelancer_id=freelancer_id)
         return self.service.get_ranked_gigs(gigs, sort_by, limit)
 
     async def get_freelancer_profile(self, freelancer_id: str):

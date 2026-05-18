@@ -7,22 +7,26 @@ import 'package:near_me/Frontend/Features/Gigs/Repository/GigRepo.dart';
 final gigprovider = AsyncNotifierProvider<GigViewmodel, List<GigModel>>(
   GigViewmodel.new,
 );
-class GigViewmodel extends AsyncNotifier<List<GigModel>>{
+
+class GigViewmodel extends AsyncNotifier<List<GigModel>> {
   final _repo = GigRepository();
   @override
   FutureOr<List<GigModel>> build() {
-    return _repo.getAllGigs(limit: 100);
+    // By default, only load "my" gigs if user is logged in
+    return _repo.getMyGigs();
   }
+
   Future<void> getMyGigs() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       return await _repo.getMyGigs();
     });
   }
+
   Future<void> refreshGigs() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
-      return await _repo.getAllGigs(limit: 100);
+      return await _repo.getMyGigs();
     });
   }
 

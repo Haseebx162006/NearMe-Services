@@ -17,9 +17,12 @@ async def create_gig(data: GigSchema, current_user: dict = Depends(role_checker(
 @router.get("/")
 async def get_all_gigs(
     sort_by: str = Query("rating", enum=["rating", "price", "distance"]),
-    limit: int = Query(10, gt=0, le=100)
+    limit: int = Query(10, gt=0, le=100),
+    current_user: dict = Depends(get_current_user)
 ):
-    return await controller.get_all_gigs(sort_by=sort_by, limit=limit)
+    # Only show current freelancer's gigs if they are a freelancer
+    freelancer_id = str(current_user["_id"]) if current_user.get("role") == "freelancer" else None
+    return await controller.get_all_gigs(sort_by=sort_by, limit=limit, freelancer_id=freelancer_id)
 
 
 @router.get("/my")
