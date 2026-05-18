@@ -79,7 +79,7 @@ class _SplashScreenState extends State<SplashScreen>
         nextScreen = const Signupscreen();
       } else {
         // Redirect based on role
-        if (_userRole == 'freelancer') {
+        if (_userRole?.trim().toLowerCase() == 'freelancer') {
           nextScreen = const FreelancerDashboardScreen(); // Freelancer Dashboard
         } else {
           nextScreen = const CustomerMainScreen(); // Customer Homepage
