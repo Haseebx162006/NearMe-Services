@@ -68,10 +68,7 @@ class AdminService:
         return serialized
 
     async def get_dashboard_stats(self) -> dict:
-        """
-        Returns basic admin dashboard stats.
-        Safe defaults are used if some collections are empty.
-        """
+        
         total_users = await self.db.users.count_documents({})
         total_gigs = await self.db.gigs.count_documents({})
         total_orders = await self.db.orders.count_documents({})
@@ -111,12 +108,7 @@ class AdminService:
         }
 
     async def list_gigs_for_moderation(self, status_filter: str = "pending", limit: int = 50):
-        """
-        status_filter:
-          - pending: only moderation_status == 'pending'
-          - all: returns all gigs
-        Backward compatible: old gigs without moderation_status are treated as 'approved'.
-        """
+       
         query = {}
         if status_filter == "pending":
             query = {"moderation_status": "pending"}
@@ -131,9 +123,7 @@ class AdminService:
         return serialized
 
     async def moderate_gig(self, gig_id: str, new_status: str):
-        """
-        new_status: 'approved' or 'rejected'
-        """
+       
         if new_status not in ["approved", "rejected"]:
             raise HTTPException(status_code=400, detail="Invalid moderation status")
 
@@ -149,16 +139,12 @@ class AdminService:
         return {"message": f"Gig {new_status} successfully"}
 
     async def list_orders(self, limit: int = 50):
-        """
-        Admin-only list of latest orders.
-        """
+        
         orders = await self.db.orders.find().sort("created_at", -1).to_list(length=limit)
         return [self._serialize_doc(o) for o in orders]
 
     async def payments_summary(self) -> dict:
-        """
-        Simple summary for AdminOrdersPaymentsScreen.
-        """
+        
         pipeline_held = [
             {"$match": {"status": "held"}},
             {"$group": {"_id": None, "total": {"$sum": "$amount"}}},

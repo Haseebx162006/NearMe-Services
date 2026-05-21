@@ -8,7 +8,7 @@ class AnalyticService:
         self.db = db
         
     async def total_earnings(self, user_id: str):
-        """Query with BOTH string and ObjectId to handle mixed storage formats."""
+        
         obj_id = validate_object_id(user_id)
         pipeline=[
             {"$match":{

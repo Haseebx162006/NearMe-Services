@@ -29,6 +29,9 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _startLoading() {
+    setState(() {
+      _progress = 0.0;
+    });
     const duration = Duration(seconds: 5);
     const interval = Duration(milliseconds: 50);
     int steps = duration.inMilliseconds ~/ interval.inMilliseconds;
@@ -73,23 +76,51 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _navigateToNext() {
     if (mounted) {
-      Widget nextScreen;
-
       if (!_isLoggedIn) {
-        nextScreen = const Signupscreen();
+        _showNotLoggedInDialog();
       } else {
-        // Redirect based on role
+        Widget nextScreen;
         if (_userRole?.trim().toLowerCase() == 'freelancer') {
-          nextScreen = const FreelancerDashboardScreen(); // Freelancer Dashboard
+          nextScreen = const FreelancerDashboardScreen();
         } else {
-          nextScreen = const CustomerMainScreen(); // Customer Homepage
+          nextScreen = const CustomerMainScreen();
         }
-      }
 
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (context) => nextScreen));
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (context) => nextScreen));
+      }
     }
+  }
+
+  void _showNotLoggedInDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        title: const Text("Not Logged In"),
+        content: const Text("Please login to access the system."),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _startLoading();
+            },
+            child: const Text("Retry"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const Signupscreen()),
+              );
+            },
+            child: const Text("Login"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

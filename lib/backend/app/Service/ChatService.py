@@ -10,12 +10,7 @@ class ChatService:
         self.db = db
 
     async def get_or_create_conversation(self, customer_id: str, freelancer_id: str, gig_id: str):
-        """
-        Logic:
-        1. Check if a conversation between these two for this gig already exists.
-        2. If yes, return it.
-        3. If no, create a new one.
-        """
+        
         existing = await self.db.conversations.find_one({
             "customer_id": customer_id,
             "freelancer_id": freelancer_id,
@@ -40,13 +35,7 @@ class ChatService:
         return new_conversation
 
     async def save_message(self, conversation_id: str, sender_id: str, receiver_id: str, text: str, message_type: str = "text"):
-        """
-        Logic:
-        1. Create message document.
-        2. Insert into 'messages' collection.
-        3. Update 'conversations' collection (last_message, updated_at).
-        4. Trigger WebSocket notification to receiver.
-        """
+        
         message_doc = {
             "conversation_id": conversation_id,
             "sender_id": sender_id,
@@ -72,8 +61,7 @@ class ChatService:
             }
         )
 
-        # Real-time WebSocket delivery
-        # Event: message_received
+        
         ws_payload = {
             "event": "message_received",
             "data": message_doc
@@ -83,10 +71,7 @@ class ChatService:
         return message_doc
 
     async def get_messages(self, conversation_id: str, limit: int = 50, skip: int = 0):
-        """
-        Fetch chat history with pagination.
-        Ordered by timestamp (Ordered List).
-        """
+        
         cursor = self.db.messages.find({"conversation_id": conversation_id}) \
             .sort("timestamp", -1) \
             .skip(skip) \
@@ -100,14 +85,7 @@ class ChatService:
         return messages[::-1]
 
     async def get_user_inbox(self, user_id: str):
-        """
-        Fetches all conversations for a user.
-        Logic:
-        1. Find conversations where user is customer OR freelancer.
-        2. Lookup other user details.
-        3. Lookup gig details.
-        4. Sort by latest activity (Priority Queue behavior via sorting).
-        """
+       
         pipeline = [
             {
                 "$match": {
@@ -175,7 +153,7 @@ class ChatService:
         return inbox
 
     async def mark_as_read(self, conversation_id: str, user_id: str):
-        """Resets unread count for a conversation."""
+        
         await self.db.conversations.update_one(
             {"_id": ObjectId(conversation_id)},
             {"$set": {"unread_count": 0}}

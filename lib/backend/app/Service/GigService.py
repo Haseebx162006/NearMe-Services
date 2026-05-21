@@ -12,12 +12,7 @@ class GigService:
         self.db = db
 
     def get_ranked_gigs(self, gigs: List[dict], sort_by: str, limit: int) -> List[dict]:
-        """
-        Ranks and sorts gigs in-memory using a Heap (Priority Queue).
-        - rating: Max Heap (using negative values)
-        - price: Min Heap
-        - distance: Min Heap
-        """
+        
         heap = []
         
         for gig in gigs:

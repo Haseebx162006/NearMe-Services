@@ -126,12 +126,10 @@ class SearchService:
                 detail="page_size must be between 1 and 100",
             )
 
-        # Step 2: Make sure required indexes exist.
+        
         await self.ensure_indexes()
 
-        # Step 3: Load coordinates.
-        # If the frontend sent latitude/longitude directly, use those.
-        # Otherwise fall back to the user document lookup.
+        
         if latitude is not None and longitude is not None:
             coordinates = [float(longitude), float(latitude)]
         else:

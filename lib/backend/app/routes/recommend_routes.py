@@ -6,7 +6,7 @@ router = APIRouter(
     prefix="/recommend",
     tags=["Recommendations"]
 )
-
+ 
 controller = RecommendationController()
 
 @router.get("/{user_id}")
