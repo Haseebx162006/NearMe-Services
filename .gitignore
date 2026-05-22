@@ -75,6 +75,10 @@ env/
 ENV/
 lib/backend/venv/
 
+# AI Agent configurations
+*.agent.md
+.agent.md
+
 # Local machine-specific SDK paths
 /android/local.properties
 
