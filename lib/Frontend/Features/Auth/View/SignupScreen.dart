@@ -139,7 +139,7 @@ class _SignupscreenState extends ConsumerState<Signupscreen> {
               CustomTextField(
                 controller: nameController,
                 label: 'Full Name',
-                hintText: 'John Doe',
+                hintText: 'Haseeb',
                 prefixIcon: Icons.person_outline,
               ),
               const SizedBox(height: 20),
