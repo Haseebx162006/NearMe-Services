@@ -140,7 +140,6 @@ pip install -r requirements.txt
 # 4. Start the Application
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
-> **Tip:** Visit `http://localhost:8000/docs` to view the auto-generated Swagger API documentation.
 
 ### 3. Frontend Initialization (Flutter)
 Open a **new terminal tab** in the project root (`near_me/`):
