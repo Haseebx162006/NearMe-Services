@@ -38,7 +38,7 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
     ref.listen(authprovider, (prev, next) {
       if (next is AsyncError) {
         String msg = next.error.toString().replaceAll('Exception: ', '');
-        ScaffoldMessenger.of(
+        ScaffoldMessenger.of (
           context,
         ).showSnackBar(SnackBar(content: Text(msg)));
       }

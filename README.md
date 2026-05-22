@@ -1,63 +1,34 @@
-## Near Me
+# NearMe Mobile Application
 
-Near Me is a Flutter project with a Python FastAPI backend.
+This directory contains the primary **Customer Mobile Application** for the NearMe platform. It is built using Flutter and serves as the main interface for users to discover, book, and interact with local service providers.
 
-The mobile/web/desktop client lives in the root Flutter app, and the backend API lives in `lib/backend/app`.
+## 📱 Features
 
-## Tech Stack
+- **User Authentication:** Secure signup/login flow.
+- **Service Discovery:** Map-based and category-based searching.
+- **Booking Flow:** Seamless order placement for gigs.
+- **Real-time Chat:** Direct messaging with freelancers.
+- **Profile Management:** User settings and order history.
 
-- Flutter (frontend)
-- FastAPI + Uvicorn (backend)
-- Python dependencies in `lib/backend/app/requirements.txt`
+## 🛠 Project Structure
 
-## Prerequisites
+- `lib/Frontend/`: Contains the UI screens and features.
+- `lib/core/`: Shared utilities, constants, and theme data.
+- `lib/backend/`: (Internal) API integration and background task logic.
+- `assets/`: Image assets, fonts, and environment configurations.
 
-- Flutter SDK installed and available in PATH
-- Python 3.10+ installed
-- pip installed
+## 🚀 Getting Started
 
-## Project Structure
+1. **Install Dependencies:**
+   ```bash
+   flutter pub get
+   ```
 
-- `lib/main.dart`: Flutter app entry point
-- `lib/backend/app/main.py`: FastAPI app entry point
-- `lib/backend/app/requirements.txt`: backend Python packages
+2. **Run the App:**
+   ```bash
+   flutter run
+   ```
 
-## Starting The Project
+> For full project documentation, including backend setup and admin dashboards, please refer to the [Root README](../README.md).
 
-1. Install Flutter packages (from project root):
-
-	```bash
-	flutter pub get
-	```
-
-2. Install backend packages (from `lib/backend/app`):
-
-	```bash
-	pip install -r requirements.txt
-	```
-
-3. Start the backend API (from `lib/backend/app`):
-
-	```bash
-	uvicorn main:app --reload --host 0.0.0.0 --port 8000
-	```
-
-4. In a new terminal, start Flutter app (from project root):
-
-	```bash
-	flutter run
-	```
-
-## Verify Backend
-
-Open this URL after starting the backend:
-
-- http://127.0.0.1:8000/
-
-You should get the default greeting response from the FastAPI route.
-
-## Notes
-
-- Keep backend and Flutter running in separate terminals during development.
-- Use `flutter devices` to list available run targets.
 
