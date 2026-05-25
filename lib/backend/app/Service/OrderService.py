@@ -3,6 +3,19 @@ from fastapi import HTTPException, status
 from core.database import db
 from bson import ObjectId
 from utils.Pyobject import validate_object_id
+from datetime import datetime, timezone
+
+
+# --- Fix #9: Status transition whitelist ---
+ALLOWED_TRANSITIONS = {
+    "pending":     ["accepted", "cancelled"],
+    "accepted":    ["in_progress", "cancelled"],
+    "in_progress": ["delivered"],
+    # "delivered", "disputed", "completed", "cancelled"
+    # are managed exclusively by DeliveryService / DisputeService / PaymentService.
+    # They CANNOT be set via the generic update_order endpoint.
+}
+
 
 class OrderService:
     def __init__(self):
@@ -120,9 +133,9 @@ class OrderService:
             order_data["status"] = "pending"
 
         order_data["reviewed"] = False
-            
-        import datetime
-        order_data["created_at"] = datetime.datetime.utcnow()
+
+        # --- Fix #21: Use timezone-aware datetime ---
+        order_data["created_at"] = datetime.now(timezone.utc)
         
         Order = await self.db.orders.insert_one(order_data)
         return str(Order.inserted_id)
@@ -161,20 +174,44 @@ class OrderService:
         return [await self._serialize_order(order) for order in orders]
     
     async def delete_order(self, order_id: str):
-        # Logic to delete an order by its ID from the database
-        
+        """
+        Fix #19: Add guards to prevent deleting orders with active payments or disputes.
+        """
         order_object_id = validate_object_id(order_id)
         order = await self.db.orders.find_one({"_id": order_object_id})
         
         if order is None:
             raise HTTPException(status_code=404, detail="Order not found")
+
+        # --- Fix #19: Safety guards ---
+        if order.get("payment_status") in ("held", "released"):
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot delete order with active payment",
+            )
+
+        if order.get("dispute_status") == "open":
+            raise HTTPException(
+                status_code=400,
+                detail="Cannot delete order with an open dispute",
+            )
+
+        if order.get("status") in ("in_progress", "delivered", "disputed"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete order with status '{order.get('status')}'",
+            )
         
         await self.db.orders.delete_one({"_id": order_object_id})
         return {"message": "Order deleted successfully"}
     
     async def update_order(self, order_id: str, order_data: dict):
-        # Logic to update an order by its ID in the database
-        
+        """
+        Fix #9: Enforces a status transition whitelist.
+        Only allowed transitions can be made via this generic endpoint.
+        Critical transitions (delivered, disputed, completed) are managed
+        by their respective dedicated services.
+        """
         order_object_id = validate_object_id(order_id)
         order = await self.db.orders.find_one({"_id": order_object_id})
         
@@ -184,11 +221,25 @@ class OrderService:
         update_data = dict(order_data)
         if not update_data:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid order data")
+
+        # --- Fix #9: Status transition validation ---
+        new_status = update_data.get("status")
+        if new_status:
+            current_status = order.get("status")
+            allowed = ALLOWED_TRANSITIONS.get(current_status, [])
+
+            if new_status not in allowed:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot transition from '{current_status}' to '{new_status}'. "
+                           f"Allowed: {allowed}",
+                )
         
-        # If status is being updated to completed, set completed_at
+        # --- Fix #21: timezone-aware datetime ---
         if update_data.get("status") == "completed":
-            import datetime
-            update_data["completed_at"] = datetime.datetime.utcnow()
+            update_data["completed_at"] = datetime.now(timezone.utc)
+
+        update_data["updated_at"] = datetime.now(timezone.utc)
         
         update_data.pop("_id", None)
         await self.db.orders.update_one({"_id": order_object_id}, {"$set": update_data})
@@ -213,8 +264,6 @@ class OrderService:
        
         order_object_id = validate_object_id(order_id)
         
-        
-        
         updated_order = await self.db.orders.find_one_and_update(
             {"_id": order_object_id, "status": "OPEN"},
             {"$set": {
@@ -227,5 +276,4 @@ class OrderService:
         if updated_order:
             return True
         else:
-            
             return False

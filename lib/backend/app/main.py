@@ -12,8 +12,12 @@ from routes.analytics_routes import router as analytics_router
 from routes.media_routes import router as media_router
 from routes.recommend_routes import router as recommend_router
 from routes.chat_routes import router as chat_router
+from routes.delivery_routes import router as delivery_router
+from routes.dispute_routes import router as dispute_router
 from Service.search_service import SearchService
 from task_queue.AcceptanceQueue import process_order_acceptance_worker
+from models.Order import ensure_order_indexes
+from core.database import db
 
 search_service = SearchService()
 
@@ -21,6 +25,7 @@ search_service = SearchService()
 async def lifespan(app: FastAPI):
     # --- STARTUP LOGIC ---
     await search_service.ensure_indexes()
+    await ensure_order_indexes(db)  # Fix #17: Create order indexes
     
     # Create the background worker task to run sequentially
     worker_task = asyncio.create_task(process_order_acceptance_worker())
@@ -57,6 +62,8 @@ app.include_router(analytics_router)
 app.include_router(media_router)
 app.include_router(recommend_router)
 app.include_router(chat_router)
+app.include_router(delivery_router)
+app.include_router(dispute_router)
 
 @app.get('/')
 def greet():

@@ -17,19 +17,21 @@ class BaseOrderSchema(BaseModel):
     status: Literal[
         "pending",
         "accepted",
-        "rejected",
         "in_progress",
+        "delivered",
         "completed",
+        "disputed",
         "cancelled"
     ] = "pending"
 
     platform_fee: float = Field(default_factory=lambda: constant.PLATFORM_FEE)
 
     payment_status: Literal[
+        "pending",
         "held",
         "released",
         "refunded"
-    ] = "held"
+    ] = "pending"
 
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
@@ -53,13 +55,15 @@ class UpdateOrderSchema(BaseModel):
     status: Optional[Literal[
         "pending",
         "accepted",
-        "rejected",
         "in_progress",
+        "delivered",
         "completed",
+        "disputed",
         "cancelled"
     ]] = None
 
     payment_status: Optional[Literal[
+        "pending",
         "held",
         "released",
         "refunded"

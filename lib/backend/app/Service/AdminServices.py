@@ -11,8 +11,8 @@ class AdminService:
     def _serialize_user(self, user: dict) -> dict:
         serialized = dict(user)
         serialized["_id"] = str(serialized["_id"])
-        serialized.pop("password", None)  # Safety: never send passwords
-        serialized.pop("passwrd", None)   # the actual DB field name
+        serialized.pop("password", None)  
+        serialized.pop("passwrd", None)   
         return serialized
     
     async def get_all_users(self):
@@ -45,9 +45,7 @@ class AdminService:
         )
         return {"message": "Account reactivated successfully"}
 
-    # -----------------------------
-    # Beginner-friendly Admin APIs
-    # -----------------------------
+
     def _serialize_doc(self, doc: dict) -> dict:
         """
         Converts MongoDB types into JSON-safe types (ObjectId -> str).
@@ -66,6 +64,8 @@ class AdminService:
             elif isinstance(value, datetime):
                 serialized[key] = value.isoformat()
         return serialized
+
+
 
     async def get_dashboard_stats(self) -> dict:
         
@@ -107,6 +107,7 @@ class AdminService:
             "recent_activity": activity[:6],
         }
 
+
     async def list_gigs_for_moderation(self, status_filter: str = "pending", limit: int = 50):
        
         query = {}
@@ -121,6 +122,8 @@ class AdminService:
                 doc["moderation_status"] = "approved"
             serialized.append(doc)
         return serialized
+
+
 
     async def moderate_gig(self, gig_id: str, new_status: str):
        
@@ -138,24 +141,40 @@ class AdminService:
         )
         return {"message": f"Gig {new_status} successfully"}
 
+
+
     async def list_orders(self, limit: int = 50):
         
         orders = await self.db.orders.find().sort("created_at", -1).to_list(length=limit)
         return [self._serialize_doc(o) for o in orders]
 
+
+
+
     async def payments_summary(self) -> dict:
-        
+        """
+        Fix #11: Query the orders collection (where payment data actually lives)
+        instead of the empty payments collection.
+        """
         pipeline_held = [
-            {"$match": {"status": "held"}},
+            {"$match": {"payment_status": "held"}},
             {"$group": {"_id": None, "total": {"$sum": "$amount"}}},
         ]
-        held_result = await self.db.payments.aggregate(pipeline_held).to_list(length=1)
+        held_result = await self.db.orders.aggregate(pipeline_held).to_list(length=1)
         total_in_escrow = float(held_result[0]["total"]) if held_result else 0.0
 
-        disputed_orders = 0  # Not implemented in current data model
+        pipeline_released = [
+            {"$match": {"payment_status": "released"}},
+            {"$group": {"_id": None, "total": {"$sum": "$amount"}}},
+        ]
+        released_result = await self.db.orders.aggregate(pipeline_released).to_list(length=1)
+        total_released = float(released_result[0]["total"]) if released_result else 0.0
+
+        disputed_orders = await self.db.orders.count_documents({"dispute_status": "open"})
 
         return {
             "total_in_escrow": total_in_escrow,
+            "total_released": total_released,
             "disputed_orders": disputed_orders,
         }
 

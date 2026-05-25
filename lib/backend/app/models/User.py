@@ -1,8 +1,8 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from pymongo import GEOSPHERE, IndexModel
-from typing import Optional, List
-from datetime import datetime
+from typing import Literal, Optional, List
+from datetime import datetime, timezone
 
 
 class Location(BaseModel):
@@ -29,16 +29,16 @@ class User(BaseModel):
     email:EmailStr
     passwrd: str
     phone_number:str
-    role: str
+    role: Literal["customer", "freelancer", "admin"]
     
-    profile_picture: Optional[str]
-    profile_bio: Optional[str]
+    profile_picture: Optional[str] = None
+    profile_bio: Optional[str] = None
     
     location: Optional[Location] = None
     
     skills: Optional[List[str]] = Field(default_factory=list)
-    Wallet: Optional[float] = 0.0
     rating: Optional[float] = 0.0
+    stripe_account_id: Optional[str] = None
     
     preferred_radius_km: Optional[int] = 10
 
@@ -46,16 +46,15 @@ class User(BaseModel):
     is_active: bool = True
     suspension_remark: Optional[str] = None
     
-    created_at : datetime = Field(default_factory=datetime.utcnow)
-    updated_at : Optional[datetime] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: Optional[datetime] = None
 
 
 USER_INDEXES = [
    IndexModel(
        [("location", GEOSPHERE)],
        name="idx_users_location_2dsphere",
-       # Note: partial_filter_expression is NOT supported for 2dsphere indexes.
-       # We rely on application-level validation to ensure GeoJSON correctness.
+       
    ),
    IndexModel([("role", 1), ("is_active", 1)], name="idx_users_role_active")
 ]
@@ -65,15 +64,8 @@ async def ensure_user_indexes(database: AsyncIOMotorDatabase) -> None:
     try:
         await database.users.create_indexes(USER_INDEXES)
     except Exception as e:
-        # If there's a conflict, drop the old index and recreate it
         if "IndexKeySpecsConflict" in str(e) or "already exists with different options" in str(e):
             await database.users.drop_index("idx_users_location_2dsphere")
             await database.users.create_indexes(USER_INDEXES)
         else:
             raise e
-    
-    
-    
-    
-    
-
