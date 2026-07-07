@@ -8,11 +8,8 @@ class CloudinaryService:
     def __init__(self):
         # Configure Cloudinary once (safe to call multiple times)
         if not settings.CLOUDINARY_CLOUD_NAME or not settings.CLOUDINARY_API_KEY or not settings.CLOUDINARY_API_SECRET:
-            # Keep message beginner-friendly
-            raise HTTPException(
-                status_code=500,
-                detail="Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET in .env",
-            )
+            print("WARNING: Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET in .env")
+            return
 
         cloudinary.config(
             cloud_name=settings.CLOUDINARY_CLOUD_NAME,
@@ -26,6 +23,11 @@ class CloudinaryService:
         Uploads raw bytes to Cloudinary and returns the secure URL.
         Beginner-friendly: minimal parameters, clear response.
         """
+        if not settings.CLOUDINARY_CLOUD_NAME or not settings.CLOUDINARY_API_KEY or not settings.CLOUDINARY_API_SECRET:
+            raise HTTPException(
+                status_code=500,
+                detail="Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET in environment variables.",
+            )
         try:
             result = cloudinary.uploader.upload(
                 file_bytes,
