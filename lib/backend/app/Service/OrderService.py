@@ -9,11 +9,11 @@ from datetime import datetime, timezone
 # --- Fix #9: Status transition whitelist ---
 ALLOWED_TRANSITIONS = {
     "pending":     ["accepted", "cancelled"],
-    "accepted":    ["in_progress", "cancelled"],
-    "in_progress": ["delivered"],
-    # "delivered", "disputed", "completed", "cancelled"
-    # are managed exclusively by DeliveryService / DisputeService / PaymentService.
-    # They CANNOT be set via the generic update_order endpoint.
+    "accepted":    ["in_progress", "cancelled", "completed"],
+    "in_progress": ["delivered", "completed"],
+    "delivered":   ["completed"],
+    # "disputed", "completed", "cancelled" are managed exclusively by dedicated services
+    # where needed, but completed is now allowed with automated payment release integration.
 }
 
 
@@ -237,6 +237,19 @@ class OrderService:
         
         # --- Fix #21: timezone-aware datetime ---
         if update_data.get("status") == "completed":
+            # If transitioning to completed, release the payment first via Stripe
+            from Service.PaymentService import PaymentService
+            payment_service = PaymentService()
+            try:
+                await payment_service.release_payment(order_id)
+            except HTTPException as e:
+                # If payment release fails, propagate the HTTPException to abort the state transition
+                raise e
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Status update failed because payment release failed: {str(e)}",
+                )
             update_data["completed_at"] = datetime.now(timezone.utc)
 
         update_data["updated_at"] = datetime.now(timezone.utc)

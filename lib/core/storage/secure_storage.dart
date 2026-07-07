@@ -1,26 +1,31 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SecureStorage {
-  final _storage = FlutterSecureStorage();
+  // Use SharedPreferences under the hood for maximum reliability across app restarts (avoids Keystore corruption bugs)
 
   Future<void> saveToken(String token) async {
-    await _storage.write(key: 'token', value: token);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
   }
 
   Future<String?> getToken() async {
-    return await _storage.read(key: 'token');
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
   }
 
   Future<void> saveRole(String role) async {
-    await _storage.write(key: 'user_role', value: role);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('user_role', role);
   }
 
   Future<String?> getRole() async {
-    return await _storage.read(key: 'user_role');
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_role');
   }
 
   Future<void> deleteToken() async {
-    await _storage.delete(key: 'token');
-    await _storage.delete(key: 'user_role');
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('user_role');
   }
 }
