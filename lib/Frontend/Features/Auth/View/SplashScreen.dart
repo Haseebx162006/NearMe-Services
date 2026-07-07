@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:near_me/Frontend/Features/Auth/View/SignupScreen.dart';
-
-import 'package:near_me/Frontend/Features/Search/Views/CustomerSearchScreen.dart';
-import 'package:near_me/Frontend/Features/analytics/analytics_screen.dart';
+import 'package:near_me/Frontend/Features/Auth/View/LoginScreen.dart';
+import 'package:near_me/Frontend/Views/AdminMainScreen.dart';
 import 'package:near_me/Frontend/Views/CustomerMainScreen.dart';
 import 'package:near_me/Frontend/Views/FreelancerDashboardScreen.dart';
 import 'package:near_me/core/storage/secure_storage.dart';
@@ -77,11 +76,16 @@ class _SplashScreenState extends State<SplashScreen>
   void _navigateToNext() {
     if (mounted) {
       if (!_isLoggedIn) {
-        _showNotLoggedInDialog();
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const Loginscreen()),
+        );
       } else {
         Widget nextScreen;
-        if (_userRole?.trim().toLowerCase() == 'freelancer') {
+        final cleanRole = _userRole?.trim().toLowerCase();
+        if (cleanRole == 'freelancer') {
           nextScreen = const FreelancerDashboardScreen();
+        } else if (cleanRole == 'admin') {
+          nextScreen = const AdminMainScreen();
         } else {
           nextScreen = const CustomerMainScreen();
         }
@@ -91,36 +95,6 @@ class _SplashScreenState extends State<SplashScreen>
         ).pushReplacement(MaterialPageRoute(builder: (context) => nextScreen));
       }
     }
-  }
-
-  void _showNotLoggedInDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text("Not Logged In"),
-        content: const Text("Please login to access the system."),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _startLoading();
-            },
-            child: const Text("Retry"),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const Signupscreen()),
-              );
-            },
-            child: const Text("Login"),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -183,16 +157,6 @@ class _SplashScreenState extends State<SplashScreen>
                     style: TextStyle(color: Color(0xFFD4AF37)), // Gold color
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            // Decorative dot
-            Container(
-              width: 4,
-              height: 4,
-              decoration: const BoxDecoration(
-                color: Color(0xFFD4AF37),
-                shape: BoxShape.circle,
               ),
             ),
             const SizedBox(height: 24),

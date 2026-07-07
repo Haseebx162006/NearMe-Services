@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: near-me-backend
+    name: near-me-chat
     env: python
     rootDir: lib/backend/app
     buildCommand: pip install -r requirements.txt

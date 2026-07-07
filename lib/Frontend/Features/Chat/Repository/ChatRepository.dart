@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:near_me/core/Network/dioClient.dart';
 import 'package:near_me/Frontend/Features/Chat/Model/ChatModel.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -23,16 +24,14 @@ class ChatRepository {
   Future<MessageModel> sendMessage({
     required String conversationId,
     required String receiverId,
-    required String text,
-    String messageType = 'text',
+    required String content,
   }) async {
     final response = await _dio.post(
       '/chat/send',
       data: {
         'conversation_id': conversationId,
         'receiver_id': receiverId,
-        'text': text,
-        'message_type': messageType,
+        'content': content,
       },
     );
     return MessageModel.fromJson(response.data);
@@ -45,7 +44,7 @@ class ChatRepository {
         .toList();
   }
 
-  Future<List<MessageModel>> getMessages(
+  Future<List<MessageModel>> getChatHistory(
     String conversationId, {
     int limit = 50,
     int skip = 0,
@@ -66,15 +65,18 @@ class ChatRepository {
   // --- WebSocket Methods ---
 
   WebSocketChannel connectWebSocket(String userId) {
-    // Dynamically derive WebSocket URL from API_BASE_URL
-    final String apiBaseUrl = Dioclient.baseUrl;
+    // Check if a dedicated CHAT_BASE_URL is specified in the environment (e.g. for Render deployment of chat service)
+    final String? chatBaseUrl = dotenv.env['CHAT_BASE_URL'];
+    final String sourceUrl = (chatBaseUrl != null && chatBaseUrl.isNotEmpty)
+        ? chatBaseUrl
+        : Dioclient.baseUrl;
 
     // Convert https://... to wss://... or http://... to ws://...
     String wsBase;
-    if (apiBaseUrl.startsWith('https://')) {
-      wsBase = apiBaseUrl.replaceFirst('https://', 'wss://');
-    } else if (apiBaseUrl.startsWith('http://')) {
-      wsBase = apiBaseUrl.replaceFirst('http://', 'ws://');
+    if (sourceUrl.startsWith('https://')) {
+      wsBase = sourceUrl.replaceFirst('https://', 'wss://');
+    } else if (sourceUrl.startsWith('http://')) {
+      wsBase = sourceUrl.replaceFirst('http://', 'ws://');
     } else {
       // Fallback
       wsBase = 'ws://192.168.100.4:8000';

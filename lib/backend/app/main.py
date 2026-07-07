@@ -1,4 +1,10 @@
 import asyncio
+import sys
+import os
+
+# Ensure the app directory is in the Python search path for Vercel/serverless environments
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,18 +33,21 @@ async def lifespan(app: FastAPI):
     await search_service.ensure_indexes()
     await ensure_order_indexes(db)  # Fix #17: Create order indexes
     
-    # Create the background worker task to run sequentially
-    worker_task = asyncio.create_task(process_order_acceptance_worker())
+    worker_task = None
+    if not os.environ.get("VERCEL"):
+        # Create the background worker task to run sequentially (skipped on Vercel serverless functions)
+        worker_task = asyncio.create_task(process_order_acceptance_worker())
     
     yield  # Server runs here
     
     # --- SHUTDOWN LOGIC ---
-    # Properly cancel the background task upon server termination
-    worker_task.cancel()
-    try:
-        await worker_task
-    except asyncio.CancelledError:
-        pass
+    if worker_task:
+        # Properly cancel the background task upon server termination
+        worker_task.cancel()
+        try:
+            await worker_task
+        except asyncio.CancelledError:
+            pass
 
 app = FastAPI(lifespan=lifespan)
 
