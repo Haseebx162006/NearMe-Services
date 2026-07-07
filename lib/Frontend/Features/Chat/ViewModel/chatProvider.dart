@@ -103,12 +103,12 @@ class ChatNotifier extends AsyncNotifier<List<MessageModel>> {
       
       final updatedMessages = state.value ?? [];
       state = AsyncValue.data(
-        updatedMessages.map((m) => m.id == tempId ? savedMsg : m).toList(),
+        updatedMessages.map<MessageModel>((m) => m.id == tempId ? savedMsg : m).toList(),
       );
     } catch (e) {
       final updatedMessages = state.value ?? [];
       state = AsyncValue.data(
-        updatedMessages.map((m) {
+        updatedMessages.map<MessageModel>((m) {
           if (m.id == tempId) {
             return MessageModel(
               id: m.id,

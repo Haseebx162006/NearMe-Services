@@ -243,6 +243,129 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
     );
   }
 
+  void _showCategoryBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Select Category',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF3E2723),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Colors.grey, size: 20),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 1.0,
+                  ),
+                  itemCount: _categories.length,
+                  itemBuilder: (context, index) {
+                    final cat = _categories[index];
+                    final isSelected = _selectedCategory == cat;
+                    IconData icon;
+                    switch (cat) {
+                      case 'Cleaning':
+                        icon = Icons.cleaning_services_outlined;
+                        break;
+                      case 'Repair':
+                        icon = Icons.build_outlined;
+                        break;
+                      case 'Plumbing':
+                        icon = Icons.plumbing_outlined;
+                        break;
+                      case 'Electrical':
+                        icon = Icons.electrical_services_outlined;
+                        break;
+                      case 'Tutoring':
+                        icon = Icons.school_outlined;
+                        break;
+                      case 'Design':
+                        icon = Icons.palette_outlined;
+                        break;
+                      case 'Photography':
+                        icon = Icons.photo_camera_outlined;
+                        break;
+                      case 'Delivery':
+                        icon = Icons.local_shipping_outlined;
+                        break;
+                      default:
+                        icon = Icons.category_outlined;
+                    }
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => _selectedCategory = cat);
+                        Navigator.pop(context);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFFF3E5D8) : const Color(0xFFFBF8F6),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFFC7A76D) : const Color(0xFFEEEEEE),
+                            width: isSelected ? 1.5 : 1.0,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              icon,
+                              color: isSelected ? const Color(0xFF3E2723) : const Color(0xFFC7A76D),
+                              size: 28,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              cat,
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 12,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                color: const Color(0xFF3E2723),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final uploadState = ref.watch(mediaUploadControllerProvider);
@@ -426,50 +549,32 @@ class _CreateGigScreenState extends ConsumerState<CreateGigScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        isExpanded: true,
-                        value: _selectedCategory.isEmpty
-                            ? null
-                            : _selectedCategory,
-                        hint: const Text(
-                          'Select category',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            color: AppColors.textHint,
+                  GestureDetector(
+                    onTap: () => _showCategoryBottomSheet(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _selectedCategory.isEmpty ? 'Select category' : _selectedCategory,
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 14,
+                              color: _selectedCategory.isEmpty ? AppColors.textHint : AppColors.textPrimary,
+                              fontWeight: _selectedCategory.isEmpty ? FontWeight.normal : FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        items: _categories
-                            .map(
-                              (cat) => DropdownMenuItem(
-                                value: cat,
-                                child: Text(
-                                  cat,
-                                  style: const TextStyle(
-                                    fontFamily: 'Poppins',
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => _selectedCategory = value);
-                          }
-                        },
-                        icon: const Icon(
-                          Icons.keyboard_arrow_down,
-                          color: Colors.grey,
-                        ),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.grey,
+                          ),
+                        ],
                       ),
                     ),
                   ),

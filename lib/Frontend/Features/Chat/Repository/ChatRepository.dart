@@ -24,14 +24,16 @@ class ChatRepository {
   Future<MessageModel> sendMessage({
     required String conversationId,
     required String receiverId,
-    required String content,
+    required String text,
+    String messageType = 'text',
   }) async {
     final response = await _dio.post(
       '/chat/send',
       data: {
         'conversation_id': conversationId,
         'receiver_id': receiverId,
-        'content': content,
+        'text': text,
+        'message_type': messageType,
       },
     );
     return MessageModel.fromJson(response.data);
@@ -44,7 +46,7 @@ class ChatRepository {
         .toList();
   }
 
-  Future<List<MessageModel>> getChatHistory(
+  Future<List<MessageModel>> getMessages(
     String conversationId, {
     int limit = 50,
     int skip = 0,

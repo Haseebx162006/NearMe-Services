@@ -92,12 +92,12 @@ class _LoginscreenState extends ConsumerState<Loginscreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF8B5E3C).withOpacity(0.1),
+                      color: const Color(0xFF4A342F),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
-                      Icons.shield,
-                      color: Color(0xFF8B5E3C),
+                      Icons.location_on,
+                      color: Color(0xFFD4B483),
                       size: 28,
                     ),
                   ),

@@ -1,10 +1,66 @@
 from core.database import db
 from bson import ObjectId
 from fastapi import HTTPException, status
-import heapq
 from typing import List
 from utils.Pyobject import validate_object_id
 from datetime import datetime, timezone
+
+
+class MinHeap:
+    """
+    Custom textbook Binary Min-Heap implementation for priority queue operations.
+    Used for sorting and ranking gigs efficiently in O(N log K) time.
+    """
+    def __init__(self):
+        self.heap = []
+
+    def parent(self, i: int) -> int:
+        return (i - 1) // 2
+
+    def left_child(self, i: int) -> int:
+        return 2 * i + 1
+
+    def right_child(self, i: int) -> int:
+        return 2 * i + 2
+
+    def insert(self, key: float, value: dict) -> None:
+        self.heap.append((key, value))
+        self._bubble_up(len(self.heap) - 1)
+
+    def extract_min(self) -> dict | None:
+        if not self.heap:
+            return None
+        if len(self.heap) == 1:
+            return self.heap.pop()[1]
+        
+        min_val = self.heap[0][1]
+        self.heap[0] = self.heap.pop()
+        self._sink_down(0)
+        return min_val
+
+    def _bubble_up(self, i: int) -> None:
+        while i > 0 and self.heap[i][0] < self.heap[self.parent(i)][0]:
+            p = self.parent(i)
+            self.heap[i], self.heap[p] = self.heap[p], self.heap[i]
+            i = p
+
+    def _sink_down(self, i: int) -> None:
+        min_index = i
+        left = self.left_child(i)
+        right = self.right_child(i)
+        n = len(self.heap)
+
+        if left < n and self.heap[left][0] < self.heap[min_index][0]:
+            min_index = left
+        if right < n and self.heap[right][0] < self.heap[min_index][0]:
+            min_index = right
+
+        if min_index != i:
+            self.heap[i], self.heap[min_index] = self.heap[min_index], self.heap[i]
+            self._sink_down(min_index)
+
+    def size(self) -> int:
+        return len(self.heap)
 
 
 class GigService:
@@ -12,32 +68,29 @@ class GigService:
         self.db = db
 
     def get_ranked_gigs(self, gigs: List[dict], sort_by: str, limit: int) -> List[dict]:
-        
-        heap = []
+        min_heap = MinHeap()
         
         for gig in gigs:
-            
             if sort_by == "rating":
-                
+                # Higher rating is better, sort descending
                 key = -gig.get("rating", 0.0)
             elif sort_by == "price":
-                
+                # Lower price is better, sort ascending
                 key = gig.get("price", float('inf'))
             elif sort_by == "distance":
-               
+                # Lower distance is better, sort ascending
                 key = gig.get("distance", float('inf'))
             else:
-                
                 key = -gig.get("rating", 0.0)
             
-            
-            heapq.heappush(heap, (key, id(gig), gig))
+            min_heap.insert(key, gig)
 
         ranked_gigs = []
-        # Extract top-K using heappop
-        for _ in range(min(limit, len(heap))):
-            _, _, gig = heapq.heappop(heap)
-            ranked_gigs.append(gig)
+        # Extract top-K using custom min heap
+        for _ in range(min(limit, min_heap.size())):
+            gig = min_heap.extract_min()
+            if gig:
+                ranked_gigs.append(gig)
             
         return ranked_gigs
 

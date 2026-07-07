@@ -80,17 +80,7 @@ class DisputeService:
         }
 
     async def resolve_dispute(self, order_id: str, decision: str, resolution_note: str = ""):
-        """
-        Admin resolves a dispute.
-
-        Fix #7:  freelancer_wins branch now calls PaymentService.release_payment()
-                 to actually transfer money via Stripe.
-        Fix #16: Atomic status check via find_one_and_update.
-
-        Decisions:
-        - 'freelancer_wins': Release payment to freelancer, mark completed.
-        - 'customer_wins': Refund payment to customer, mark cancelled.
-        """
+       
         if decision not in ("freelancer_wins", "customer_wins"):
             raise HTTPException(status_code=400, detail="Invalid decision")
 
@@ -127,7 +117,7 @@ class DisputeService:
                     detail=f"Failed to release payment: {e.detail}",
                 )
 
-            # --- Fix #16: Atomic final state update ---
+            
             await self.db.orders.update_one(
                 {"_id": order_oid},
                 {
