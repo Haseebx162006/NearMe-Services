@@ -172,9 +172,15 @@ class AuthRepository {
         return UserModel.fromJson(response.data);
       }
       return null;
+    } on DioException catch (e) {
+      print("DioException fetching user data: ${e.response?.statusCode} - ${e.message}");
+      if (e.response?.statusCode == 401) {
+        await _secureStorage.deleteToken();
+      }
+      rethrow;
     } catch (e) {
-      print("Error fetching user data: \$e");
-      throw Exception("Error fetching user profile data.");
+      print("Error fetching user data: $e");
+      rethrow;
     }
   }
 }

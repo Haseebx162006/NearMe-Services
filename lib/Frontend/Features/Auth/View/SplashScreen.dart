@@ -6,15 +6,18 @@ import 'package:near_me/Frontend/Views/AdminMainScreen.dart';
 import 'package:near_me/Frontend/Views/CustomerMainScreen.dart';
 import 'package:near_me/Frontend/Views/FreelancerDashboardScreen.dart';
 import 'package:near_me/core/storage/secure_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:near_me/Frontend/Features/Auth/ViewModel/authViewModel.dart';
+import 'package:dio/dio.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
+class _SplashScreenState extends ConsumerState<SplashScreen>
     with SingleTickerProviderStateMixin {
   double _progress = 0.0;
   late Timer _timer;
@@ -62,14 +65,56 @@ class _SplashScreenState extends State<SplashScreen>
     // Give it at least 2 seconds for visual effect
     await Future.delayed(const Duration(seconds: 2));
 
-    if (mounted) {
-      setState(() {
-        _isLoggedIn = token != null && token.isNotEmpty;
-        _userRole = role;
-      });
-      print(
-        "Auth status checked: ${_isLoggedIn ? 'Logged In as $_userRole' : 'Logged Out'}",
-      );
+    if (token == null || token.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = false;
+          _userRole = null;
+        });
+      }
+      return;
+    }
+
+    try {
+      final user = await ref.read(authprovider.future);
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = user != null;
+          _userRole = user?.role ?? role;
+        });
+      }
+    } catch (e) {
+      print('[SplashScreen] Auth check failed: $e');
+
+      bool isUnauthorized = false;
+      if (e is DioException) {
+        if (e.response?.statusCode == 401) {
+          isUnauthorized = true;
+        }
+      } else {
+        final errStr = e.toString().toLowerCase();
+        if (errStr.contains('401') || errStr.contains('unauthorized')) {
+          isUnauthorized = true;
+        }
+      }
+
+      if (isUnauthorized) {
+        await storage.deleteToken();
+        if (mounted) {
+          setState(() {
+            _isLoggedIn = false;
+            _userRole = null;
+          });
+        }
+      } else {
+        // Network or server connection issue: keep user logged in using the cached role
+        if (mounted) {
+          setState(() {
+            _isLoggedIn = true;
+            _userRole = role;
+          });
+        }
+      }
     }
   }
 

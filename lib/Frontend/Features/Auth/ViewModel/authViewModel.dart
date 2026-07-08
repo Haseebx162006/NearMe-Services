@@ -21,6 +21,7 @@ class Authviewmodel extends AsyncNotifier<UserModel?> {
       }
     } catch (e) {
       print('[AuthViewModel] Error during build: $e');
+      rethrow;
     }
     return null;
   }
