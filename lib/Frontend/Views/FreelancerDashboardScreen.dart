@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../Features/Auth/ViewModel/authViewModel.dart';
 import '../Features/analytics/analytics_provider.dart';
 import '../Features/Gigs/Views/FreelancerGigsScreen.dart';
 import 'FreelancerOrdersScreen.dart';
 import '../Features/Auth/View/LoginScreen.dart';
 import '../Features/Chat/Views/RealtimeInboxScreen.dart';
+import '../Features/Orders/Repository/PaymentRepository.dart';
 
 class FreelancerDashboardScreen extends ConsumerStatefulWidget {
   const FreelancerDashboardScreen({super.key});
@@ -18,6 +20,7 @@ class FreelancerDashboardScreen extends ConsumerStatefulWidget {
 class _FreelancerDashboardScreenState
     extends ConsumerState<FreelancerDashboardScreen> {
   int _selectedIndex = 0;
+  bool _isConnectingStripe = false;
 
   @override
   Widget build(BuildContext context) {
@@ -147,6 +150,10 @@ class _FreelancerDashboardScreenState
                 ],
               ),
               const SizedBox(height: 30),
+
+              // Stripe Connect Callout
+              if (userState.value?.stripeAccountId == null || userState.value!.stripeAccountId!.isEmpty)
+                _buildStripeConnectBanner(context, ref),
 
               // Summary Grid
               analyticsState.when(
@@ -505,6 +512,122 @@ class _FreelancerDashboardScreenState
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Color(0xFF4E342E),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStripeConnectBanner(BuildContext context, WidgetRef ref) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6772E5), Color(0xFF5469D4)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6772E5).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.payments_outlined, color: Colors.white, size: 28),
+              SizedBox(width: 12),
+              Text(
+                'Set Up Payouts',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'To receive customer payments directly to your bank account, connect your account with Stripe.',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 13,
+              color: Colors.white70,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton(
+              onPressed: _isConnectingStripe
+                  ? null
+                  : () async {
+                      setState(() => _isConnectingStripe = true);
+                      try {
+                        final repo = PaymentRepository();
+                        await repo.createConnectedAccount();
+                        final linkUrl = await repo.getOnboardingLink(
+                          refreshUrl: 'https://near-me-services-pi.vercel.app/payments/connect/refresh',
+                          returnUrl: 'https://near-me-services-pi.vercel.app/payments/connect/return',
+                        );
+                        
+                        final uri = Uri.parse(linkUrl);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        } else {
+                          throw Exception('Could not launch onboarding link');
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(e.toString().replaceAll('Exception: ', '')),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      } finally {
+                        if (mounted) {
+                          setState(() => _isConnectingStripe = false);
+                        }
+                      }
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF6772E5),
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: _isConnectingStripe
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF6772E5),
+                      ),
+                    )
+                  : const Text(
+                      'Connect Stripe',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
             ),
           ),
         ],

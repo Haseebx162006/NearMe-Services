@@ -245,13 +245,67 @@ class _OrderCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            order.freelancerName ?? 'Provider',
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                order.freelancerName ?? 'Provider',
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: order.paymentStatus == 'held'
+                      ? const Color(0xFFE8F5E9)
+                      : order.paymentStatus == 'released'
+                      ? const Color(0xFFE3F2FD)
+                      : const Color(0xFFFFF3E0),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      order.paymentStatus == 'held'
+                          ? Icons.lock_outline
+                          : order.paymentStatus == 'released'
+                          ? Icons.check_circle_outline
+                          : Icons.hourglass_empty,
+                      size: 12,
+                      color: order.paymentStatus == 'held'
+                          ? Colors.green[700]
+                          : order.paymentStatus == 'released'
+                          ? Colors.blue[700]
+                          : Colors.orange[700],
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      order.paymentStatus == 'held'
+                          ? 'Escrow Held'
+                          : order.paymentStatus == 'released'
+                          ? 'Paid out'
+                          : 'Awaiting Payment',
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: order.paymentStatus == 'held'
+                            ? Colors.green[700]
+                            : order.paymentStatus == 'released'
+                            ? Colors.blue[700]
+                            : order.paymentStatus == 'released'
+                            ? Colors.blue[700]
+                            : Colors.orange[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Row(

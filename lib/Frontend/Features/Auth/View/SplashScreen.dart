@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:near_me/Frontend/Features/Auth/View/SignupScreen.dart';
 import 'package:near_me/Frontend/Features/Auth/View/LoginScreen.dart';
 import 'package:near_me/Frontend/Views/AdminMainScreen.dart';
 import 'package:near_me/Frontend/Views/CustomerMainScreen.dart';

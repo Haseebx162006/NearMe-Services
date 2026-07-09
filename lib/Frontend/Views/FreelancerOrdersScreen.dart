@@ -97,6 +97,7 @@ class _FreelancerOrdersScreenState
                       final order = orders[index];
                       final isPending = order.status == 'pending';
                       final isAccepted = order.status == 'accepted';
+                      final isPaid = order.paymentStatus == 'held';
 
                       return _buildOrderCard(
                         clientName: order.customerName ?? 'New Customer',
@@ -106,6 +107,7 @@ class _FreelancerOrdersScreenState
                         requirements:
                             order.description ?? 'No details provided',
                         status: order.status.toUpperCase(),
+                        paymentStatus: order.paymentStatus,
                         statusColor: isPending
                             ? const Color(0xFFF3E5D8)
                             : isAccepted
@@ -117,114 +119,147 @@ class _FreelancerOrdersScreenState
                             ? Colors.green
                             : const Color(0xFF3E2723),
                         actions: isPending
-                            ? Row(
+                            ? Column(
                                 children: [
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      onPressed: () async {
-                                        try {
-                                          await ref
-                                              .read(
-                                                freelancerOrdersProvider
-                                                    .notifier,
-                                              )
-                                              .updateOrderStatus(
-                                                order.id ?? '',
-                                                'declined',
-                                              );
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Order declined'),
+                                  if (!isPaid)
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(10),
+                                      margin: const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFFF3E0),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                                      ),
+                                      child: const Row(
+                                        children: [
+                                          Icon(Icons.info_outline, color: Colors.orange, size: 18),
+                                          SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Waiting for customer payment before you can accept.',
+                                              style: TextStyle(
+                                                fontFamily: 'Poppins',
+                                                fontSize: 12,
+                                                color: Colors.orange,
                                               ),
-                                            );
-                                          }
-                                        } catch (e) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text('Error: $e'),
-                                              ),
-                                            );
-                                          }
-                                        }
-                                      },
-                                      icon: const Icon(Icons.close, size: 18),
-                                      label: const Text('Decline'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFFD32F2F,
-                                        ),
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
+                                            ),
                                           ),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
-                                        ),
+                                        ],
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: ElevatedButton.icon(
-                                      onPressed: () async {
-                                        try {
-                                          await ref
-                                              .read(
-                                                freelancerOrdersProvider
-                                                    .notifier,
-                                              )
-                                              .updateOrderStatus(
-                                                order.id ?? '',
-                                                'accepted',
-                                              );
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              const SnackBar(
-                                                content: Text('Order accepted'),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          onPressed: () async {
+                                            try {
+                                              await ref
+                                                  .read(
+                                                    freelancerOrdersProvider
+                                                        .notifier,
+                                                  )
+                                                  .updateOrderStatus(
+                                                    order.id ?? '',
+                                                    'declined',
+                                                  );
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Order declined'),
+                                                  ),
+                                                );
+                                              }
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  SnackBar(
+                                                    content: Text('Error: $e'),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          },
+                                          icon: const Icon(Icons.close, size: 18),
+                                          label: const Text('Decline'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(
+                                              0xFFD32F2F,
+                                            ),
+                                            foregroundColor: Colors.white,
+                                            elevation: 0,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(
+                                                12,
                                               ),
-                                            );
-                                          }
-                                        } catch (e) {
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text('Error: $e'),
-                                              ),
-                                            );
-                                          }
-                                        }
-                                      },
-                                      icon: const Icon(Icons.check, size: 18),
-                                      label: const Text('Accept'),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFFC7A76D,
-                                        ),
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                            ),
                                           ),
                                         ),
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 12,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: ElevatedButton.icon(
+                                          onPressed: isPaid
+                                              ? () async {
+                                                  try {
+                                                    await ref
+                                                        .read(
+                                                          freelancerOrdersProvider
+                                                              .notifier,
+                                                        )
+                                                        .updateOrderStatus(
+                                                          order.id ?? '',
+                                                          'accepted',
+                                                        );
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        const SnackBar(
+                                                          content: Text('Order accepted'),
+                                                        ),
+                                                      );
+                                                    }
+                                                  } catch (e) {
+                                                    if (context.mounted) {
+                                                      ScaffoldMessenger.of(
+                                                        context,
+                                                      ).showSnackBar(
+                                                        SnackBar(
+                                                          content: Text('Error: $e'),
+                                                        ),
+                                                      );
+                                                    }
+                                                  }
+                                                }
+                                              : null,
+                                          icon: const Icon(Icons.check, size: 18),
+                                          label: const Text('Accept'),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: isPaid
+                                                ? const Color(0xFFC7A76D)
+                                                : Colors.grey[400],
+                                            foregroundColor: Colors.white,
+                                            elevation: 0,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(
+                                                12,
+                                              ),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(
+                                              vertical: 12,
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ],
                               )
@@ -310,6 +345,7 @@ class _FreelancerOrdersScreenState
     required String amount,
     required String requirements,
     required String status,
+    required String paymentStatus,
     required Color statusColor,
     required Color statusTextColor,
     Widget? actions,
@@ -377,7 +413,56 @@ class _FreelancerOrdersScreenState
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          // Payment status badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: paymentStatus == 'held'
+                  ? const Color(0xFFE8F5E9)
+                  : paymentStatus == 'released'
+                  ? const Color(0xFFE3F2FD)
+                  : const Color(0xFFFFF3E0),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  paymentStatus == 'held'
+                      ? Icons.account_balance_wallet
+                      : paymentStatus == 'released'
+                      ? Icons.check_circle
+                      : Icons.hourglass_empty,
+                  size: 14,
+                  color: paymentStatus == 'held'
+                      ? Colors.green[700]
+                      : paymentStatus == 'released'
+                      ? Colors.blue[700]
+                      : Colors.orange[700],
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  paymentStatus == 'held'
+                      ? '💰 Payment Held'
+                      : paymentStatus == 'released'
+                      ? '✅ Payment Released'
+                      : '⏳ Awaiting Payment',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: paymentStatus == 'held'
+                        ? Colors.green[700]
+                        : paymentStatus == 'released'
+                        ? Colors.blue[700]
+                        : Colors.orange[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
           _buildInfoRow('Date & Time', dateTime),
           const SizedBox(height: 8),
           _buildInfoRow('Amount', amount, isPrice: true),

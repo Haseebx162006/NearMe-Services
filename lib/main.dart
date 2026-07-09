@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:near_me/Frontend/Features/Auth/View/SplashScreen.dart';
 
 void main() async {
@@ -12,6 +13,9 @@ void main() async {
   } catch (e) {
     print('Error loading .env file: $e');
   }
+
+  // Initialize Stripe with publishable key
+  Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY'] ?? '';
 
   runApp(const ProviderScope(child: MyApp()));
 }

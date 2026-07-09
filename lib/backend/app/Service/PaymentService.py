@@ -48,7 +48,7 @@ class PaymentService:
                 pass  # Intent may have expired — create a new one below
 
         freelancer = await self.db.users.find_one(
-            {"_id": order.get("freelancer_id")}
+            {"_id": validate_object_id(order.get("freelancer_id"))}
         )
 
         stripe_account_id = freelancer.get("stripe_account_id") if freelancer else None
@@ -143,7 +143,6 @@ class PaymentService:
             {
                 "$set": {
                     "payment_status": "held",
-                    "status": "in_progress",
                     "updated_at": datetime.now(timezone.utc),
                 }
             },
@@ -244,7 +243,7 @@ class PaymentService:
 
             # Determine freelancer's Stripe account
             freelancer = await self.db.users.find_one(
-                {"_id": order.get("freelancer_id")}
+                {"_id": validate_object_id(order.get("freelancer_id"))}
             )
             stripe_account_id = freelancer.get("stripe_account_id") if freelancer else None
 

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../Auth/ViewModel/authViewModel.dart';
 import '../Model/GigModel.dart';
 import '../../Orders/ViewModel/customer_order_provider.dart';
 import '../../Orders/ViewModel/customer_order_history_provider.dart';
+import '../../Orders/Repository/PaymentRepository.dart';
 import '../../../Theme/app_colors.dart';
 import '../../Chat/ViewModel/chatProvider.dart';
 import '../../Chat/Views/ChatScreen.dart';
@@ -23,6 +25,7 @@ class GigDetailScreen extends ConsumerStatefulWidget {
 class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
   final TextEditingController _requirementsController = TextEditingController();
   final _gigRepo = GigRepository();
+  final _paymentRepo = PaymentRepository();
   bool _isSubmitting = false;
   late GigModel _gig;
 
@@ -85,7 +88,8 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
         return;
       }
 
-      await ref.read(customerOrderProvider.notifier).placeOrder(
+      // Step 1: Create the order
+      final orderId = await ref.read(customerOrderProvider.notifier).placeOrder(
             gigId: _gig.id ?? '',
             freelancerId: _gig.freelancerId,
             customerId: customerId,
@@ -93,13 +97,37 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
             requirements: _requirementsController.text.trim(),
           );
 
+      if (orderId.isEmpty) {
+        throw Exception('Failed to create order');
+      }
+
+      // Step 2: Create PaymentIntent and get client_secret
       if (!mounted) return;
-      
+      final clientSecret = await _paymentRepo.createPaymentIntent(orderId);
+
+      // Step 3: Present Stripe Payment Sheet
+      await _paymentRepo.presentPaymentSheet(clientSecret);
+
+      // Step 4: Payment succeeded — show success dialog
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+
       showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (context) => AlertDialog(
-          title: const Text('Order Placed!'),
-          content: const Text('Your order has been successfully sent to the freelancer.'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green[600], size: 28),
+              const SizedBox(width: 8),
+              const Text('Payment Successful!'),
+            ],
+          ),
+          content: const Text(
+            'Your order has been placed and payment is held securely. '
+            'The freelancer will be notified to start working on your order.',
+          ),
           actions: [
             TextButton(
               onPressed: () {
@@ -109,6 +137,17 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
               child: const Text('OK'),
             ),
           ],
+        ),
+      );
+    } on StripeException catch (e) {
+      // User cancelled the payment sheet or payment failed
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      final message = e.error.localizedMessage ?? 'Payment was cancelled.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.orange,
         ),
       );
     } catch (e) {
@@ -122,6 +161,7 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

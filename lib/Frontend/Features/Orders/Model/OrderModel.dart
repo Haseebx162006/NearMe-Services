@@ -14,6 +14,7 @@ class OrderModel {
   final bool reviewed;
   final int? rating;
   final String? reviewComment;
+  final String paymentStatus;
 
   OrderModel({
     this.id,
@@ -31,6 +32,7 @@ class OrderModel {
     this.reviewed = false,
     this.rating,
     this.reviewComment,
+    this.paymentStatus = 'pending',
   });
 
   bool get needsReview =>
@@ -57,6 +59,7 @@ class OrderModel {
       reviewed: json['reviewed'] == true,
       rating: json['rating'] != null ? (json['rating'] as num).toInt() : null,
       reviewComment: json['review_comment'],
+      paymentStatus: json['payment_status']?.toString() ?? 'pending',
     );
   }
 
@@ -68,6 +71,7 @@ class OrderModel {
       'status': status,
       'amount': price,
       'description': description,
+      'payment_status': paymentStatus,
     };
   }
 }

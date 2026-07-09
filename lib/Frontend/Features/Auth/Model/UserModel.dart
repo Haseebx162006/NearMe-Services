@@ -31,6 +31,7 @@ class UserModel {
   final List<String> skills;
   final double wallet;
   final double rating;
+  final String? stripeAccountId;
   final int preferredRadiusKm;
   final bool isActive;
   final String? suspensionRemark;
@@ -50,6 +51,7 @@ class UserModel {
     this.skills = const [],
     this.wallet = 0.0,
     this.rating = 0.0,
+    this.stripeAccountId,
     this.preferredRadiusKm = 10,
     this.isActive = true,
     this.suspensionRemark,
@@ -89,6 +91,7 @@ class UserModel {
       skills: List<String>.from(json['skills'] ?? []),
       wallet: (json['Wallet'] ?? 0.0).toDouble(),
       rating: (json['rating'] ?? 0.0).toDouble(),
+      stripeAccountId: json['stripe_account_id']?.toString(),
       preferredRadiusKm: json['preferred_radius_km'] ?? 10,
       isActive: json['is_active'] ?? true,
       suspensionRemark: json['suspension_remark'],
@@ -111,6 +114,7 @@ class UserModel {
       'skills': skills,
       'Wallet': wallet,
       'rating': rating,
+      'stripe_account_id': stripeAccountId,
       'preferred_radius_km': preferredRadiusKm,
       'is_active': isActive,
       'suspension_remark': suspensionRemark,

@@ -22,8 +22,7 @@ class AdminUserService {
       final data = response.data;
       if (data is List) {
         return data
-            .whereType<Map<String, dynamic>>()
-            .map(UserModel.fromJson)
+            .map((e) => UserModel.fromJson(Map<String, dynamic>.from(e)))
             .toList();
       }
     }
