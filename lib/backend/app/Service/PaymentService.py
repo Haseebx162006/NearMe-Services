@@ -44,7 +44,7 @@ class PaymentService:
                         status_code=400,
                         detail="Payment already completed for this order",
                     )
-            except stripe.error.StripeError:
+            except (stripe.StripeError, Exception):
                 pass  # Intent may have expired — create a new one below
 
         freelancer = await self.db.users.find_one(
@@ -67,7 +67,7 @@ class PaymentService:
                     detail="Freelancer's Stripe account is not fully set up. "
                            "Please complete onboarding first.",
                 )
-        except stripe.error.StripeError as e:
+        except (stripe.StripeError, Exception) as e:
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to verify freelancer Stripe account: {str(e)}",
@@ -173,7 +173,7 @@ class PaymentService:
                     "transfers": {"requested": True},
                 },
             )
-        except stripe.error.StripeError as e:
+        except (stripe.StripeError, Exception) as e:
             raise HTTPException(
                 status_code=500,
                 detail=f"Failed to create Stripe account: {str(e)}",
@@ -196,12 +196,18 @@ class PaymentService:
         if not freelancer or not freelancer.get("stripe_account_id"):
             raise HTTPException(status_code=400, detail="Stripe account missing")
 
-        link = stripe.AccountLink.create(
-            account=freelancer["stripe_account_id"],
-            refresh_url=refresh_url,
-            return_url=return_url,
-            type="account_onboarding",
-        )
+        try:
+            link = stripe.AccountLink.create(
+                account=freelancer["stripe_account_id"],
+                refresh_url=refresh_url,
+                return_url=return_url,
+                type="account_onboarding",
+            )
+        except (stripe.StripeError, Exception) as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to create onboarding link: {str(e)}",
+            )
 
         return {"url": link.url}
 
@@ -277,7 +283,7 @@ class PaymentService:
                 metadata={"orderId": str(order_id)},
             )
 
-        except stripe.error.StripeError as e:
+        except (stripe.StripeError, Exception) as e:
             raise HTTPException(
                 status_code=500,
                 detail=f"Stripe transfer failed: {str(e)}",
@@ -332,7 +338,7 @@ class PaymentService:
        
         try:
             stripe.Refund.create(payment_intent=payment_intent_id)
-        except stripe.error.StripeError as e:
+        except (stripe.StripeError, Exception) as e:
             raise HTTPException(
                 status_code=500,
                 detail=f"Stripe refund failed: {str(e)}",

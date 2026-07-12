@@ -148,7 +148,7 @@ class DisputeService:
                         raise HTTPException(status_code=400, detail="Already refunded on Stripe")
 
                     stripe.Refund.create(payment_intent=payment_intent_id)
-                except stripe.error.StripeError as e:
+                except (stripe.StripeError, Exception) as e:
                     raise HTTPException(
                         status_code=500,
                         detail=f"Stripe refund failed: {str(e)}",
