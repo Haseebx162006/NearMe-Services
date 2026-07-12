@@ -163,12 +163,21 @@ class PaymentService:
         if freelancer.get("stripe_account_id"):
             return {"stripe_account_id": freelancer["stripe_account_id"]}
 
-        account = stripe.Account.create(
-            type="express",
-            country="US",
-            email=freelancer.get("email"),
-            capabilities={"transfers": {"requested": True}},
-        )
+        try:
+            account = stripe.Account.create(
+                type="express",
+                country="US",
+                email=freelancer.get("email"),
+                capabilities={
+                    "card_payments": {"requested": True},
+                    "transfers": {"requested": True},
+                },
+            )
+        except stripe.error.StripeError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to create Stripe account: {str(e)}",
+            )
 
         await self.db.users.update_one(
             {"_id": validate_object_id(freelancer_id)},
