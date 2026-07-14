@@ -27,26 +27,32 @@ class OrderService:
         serialized.setdefault("reviewed", False)
 
         if "customer_id" in serialized:
-            customer = await self.db.users.find_one(
-                {"_id": validate_object_id(serialized["customer_id"])}
-            )
-            serialized["customer_name"] = (
-                customer["name"] if customer else "Unknown Customer"
-            )
+            try:
+                cust_oid = validate_object_id(serialized["customer_id"])
+                customer = await self.db.users.find_one({"_id": cust_oid})
+                serialized["customer_name"] = (
+                    customer["name"] if customer else "Unknown Customer"
+                )
+            except ValueError:
+                serialized["customer_name"] = "Unknown Customer"
 
         if "freelancer_id" in serialized:
-            freelancer = await self.db.users.find_one(
-                {"_id": validate_object_id(serialized["freelancer_id"])}
-            )
-            serialized["freelancer_name"] = (
-                freelancer["name"] if freelancer else "Unknown Provider"
-            )
+            try:
+                free_oid = validate_object_id(serialized["freelancer_id"])
+                freelancer = await self.db.users.find_one({"_id": free_oid})
+                serialized["freelancer_name"] = (
+                    freelancer["name"] if freelancer else "Unknown Provider"
+                )
+            except ValueError:
+                serialized["freelancer_name"] = "Unknown Provider"
 
         if "gig_id" in serialized:
-            gig = await self.db.gigs.find_one(
-                {"_id": validate_object_id(serialized["gig_id"])}
-            )
-            serialized["gig_title"] = gig["title"] if gig else "Unknown Gig"
+            try:
+                gig_oid = validate_object_id(serialized["gig_id"])
+                gig = await self.db.gigs.find_one({"_id": gig_oid})
+                serialized["gig_title"] = gig["title"] if gig else "Unknown Gig"
+            except ValueError:
+                serialized["gig_title"] = "Unknown Gig"
 
         return serialized
 
@@ -54,10 +60,26 @@ class OrderService:
         if not orders:
             return []
 
-        # Collect all IDs
-        customer_ids = {validate_object_id(o["customer_id"]) for o in orders if "customer_id" in o}
-        freelancer_ids = {validate_object_id(o["freelancer_id"]) for o in orders if "freelancer_id" in o}
-        gig_ids = {validate_object_id(o["gig_id"]) for o in orders if "gig_id" in o}
+        # Collect all IDs safely
+        customer_ids = set()
+        freelancer_ids = set()
+        gig_ids = set()
+        for o in orders:
+            if "customer_id" in o:
+                try:
+                    customer_ids.add(validate_object_id(o["customer_id"]))
+                except ValueError:
+                    pass
+            if "freelancer_id" in o:
+                try:
+                    freelancer_ids.add(validate_object_id(o["freelancer_id"]))
+                except ValueError:
+                    pass
+            if "gig_id" in o:
+                try:
+                    gig_ids.add(validate_object_id(o["gig_id"]))
+                except ValueError:
+                    pass
 
         # Query in bulk
         customers_task = self.db.users.find({"_id": {"$in": list(customer_ids)}}).to_list(length=len(customer_ids) + 1) if customer_ids else []
@@ -101,9 +123,15 @@ class OrderService:
         return serialized_orders
 
     async def customer_has_pending_review(self, customer_id: str) -> bool:
+        query_ids = [customer_id]
+        try:
+            query_ids.append(validate_object_id(customer_id))
+        except ValueError:
+            pass
+
         pending = await self.db.orders.find_one(
             {
-                "customer_id": customer_id,
+                "customer_id": {"$in": query_ids},
                 "status": "completed",
                 "$or": [{"reviewed": {"$exists": False}}, {"reviewed": False}],
             }
@@ -202,22 +230,40 @@ class OrderService:
     
     async def get_orders_by_user(self, user_id: str):
         # Logic to retrieve all orders for a specific user from the database
+        query_ids = [user_id]
+        try:
+            query_ids.append(validate_object_id(user_id))
+        except ValueError:
+            pass
+
         orders = await self.db.orders.find({
             "$or": [
-                {"customer_id": validate_object_id(user_id)},
-                {"freelancer_id": validate_object_id(user_id)},
+                {"customer_id": {"$in": query_ids}},
+                {"freelancer_id": {"$in": query_ids}},
             ]
         }).to_list(length=100)
         
         return await self._serialize_orders_bulk(orders)
 
     async def get_orders_as_freelancer(self, freelancer_id: str):
-        orders = await self.db.orders.find({"freelancer_id": validate_object_id(freelancer_id)}).to_list(length=100)
+        query_ids = [freelancer_id]
+        try:
+            query_ids.append(validate_object_id(freelancer_id))
+        except ValueError:
+            pass
+
+        orders = await self.db.orders.find({"freelancer_id": {"$in": query_ids}}).to_list(length=100)
         return await self._serialize_orders_bulk(orders)
 
     async def get_orders_as_customer(self, customer_id: str):
+        query_ids = [customer_id]
+        try:
+            query_ids.append(validate_object_id(customer_id))
+        except ValueError:
+            pass
+
         orders = (
-            await self.db.orders.find({"customer_id": validate_object_id(customer_id)})
+            await self.db.orders.find({"customer_id": {"$in": query_ids}})
             .sort("created_at", -1)
             .to_list(length=100)
         )
