@@ -108,6 +108,9 @@ class _GigDetailScreenState extends ConsumerState<GigDetailScreen> {
       // Step 3: Present Stripe Payment Sheet
       await _paymentRepo.presentPaymentSheet(clientSecret);
 
+      // Verify and confirm payment on the backend immediately
+      await _paymentRepo.confirmPayment(orderId);
+
       // Step 4: Payment succeeded — show success dialog
       if (!mounted) return;
       setState(() => _isSubmitting = false);

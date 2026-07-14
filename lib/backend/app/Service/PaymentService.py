@@ -356,3 +356,34 @@ class PaymentService:
         )
 
         return {"message": "Refund successful"}
+
+    async def confirm_payment(self, order_id: str):
+        order_oid = validate_object_id(order_id)
+        order = await self.db.orders.find_one({"_id": order_oid})
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        payment_intent_id = order.get("stripe_payment_intent_id")
+        if not payment_intent_id:
+            raise HTTPException(status_code=400, detail="No payment intent associated with this order")
+
+        try:
+            intent = stripe.PaymentIntent.retrieve(payment_intent_id)
+            if intent.status == "succeeded":
+                await self.db.orders.update_one(
+                    {"_id": order_oid},
+                    {
+                        "$set": {
+                            "payment_status": "held",
+                            "updated_at": datetime.now(timezone.utc),
+                        }
+                    },
+                )
+                return {"status": "held", "message": "Payment confirmed and held in escrow"}
+            else:
+                return {"status": order.get("payment_status"), "message": f"Payment intent status is '{intent.status}'"}
+        except (stripe.StripeError, Exception) as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to confirm payment with Stripe: {str(e)}",
+            )

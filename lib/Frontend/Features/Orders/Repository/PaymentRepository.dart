@@ -88,4 +88,21 @@ class PaymentRepository {
       throw Exception(detail ?? 'Could not get onboarding link.');
     }
   }
+
+  /// Confirms/verifies the payment status of an order on the backend
+  Future<void> confirmPayment(String orderId) async {
+    try {
+      final token = await _secureStorage.getToken();
+      if (token == null) throw Exception('Not logged in');
+
+      await _dio.post(
+        '/payments/confirm',
+        data: {'order_id': orderId},
+        options: Options(headers: {'Authorization': 'Bearer $token'}),
+      );
+    } on DioException catch (e) {
+      final detail = e.response?.data is Map ? e.response!.data['detail'] : null;
+      throw Exception(detail ?? 'Payment confirmation failed.');
+    }
+  }
 }

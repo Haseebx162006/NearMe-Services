@@ -11,6 +11,7 @@ import '../Features/Inbox/Views/CustomerInboxScreen.dart';
 import '../Features/Chat/Views/RealtimeInboxScreen.dart';
 import '../Features/Profile/Views/CustomerProfileScreen.dart';
 import '../Features/Gigs/Views/GigDetailScreen.dart';
+import '../Features/Orders/Views/CustomerOrderHistoryScreen.dart';
 
 class CustomerMainScreen extends ConsumerStatefulWidget {
   const CustomerMainScreen({super.key});
@@ -66,6 +67,11 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
           ),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
           BottomNavigationBarItem(
+            icon: Icon(Icons.assignment_outlined),
+            activeIcon: Icon(Icons.assignment),
+            label: 'Orders',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
             label: 'Messages',
           ),
@@ -80,6 +86,7 @@ class _CustomerMainScreenState extends ConsumerState<CustomerMainScreen> {
         children: [
           _buildHomeTab(context),
           const CustomerSearchScreen(),
+          const CustomerOrderHistoryScreen(),
           const RealtimeInboxScreen(),
           const CustomerProfileScreen(),
         ],

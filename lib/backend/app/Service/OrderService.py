@@ -50,6 +50,56 @@ class OrderService:
 
         return serialized
 
+    async def _serialize_orders_bulk(self, orders: list):
+        if not orders:
+            return []
+
+        # Collect all IDs
+        customer_ids = {validate_object_id(o["customer_id"]) for o in orders if "customer_id" in o}
+        freelancer_ids = {validate_object_id(o["freelancer_id"]) for o in orders if "freelancer_id" in o}
+        gig_ids = {validate_object_id(o["gig_id"]) for o in orders if "gig_id" in o}
+
+        # Query in bulk
+        customers_task = self.db.users.find({"_id": {"$in": list(customer_ids)}}).to_list(length=len(customer_ids) + 1) if customer_ids else []
+        freelancers_task = self.db.users.find({"_id": {"$in": list(freelancer_ids)}}).to_list(length=len(freelancer_ids) + 1) if freelancer_ids else []
+        gigs_task = self.db.gigs.find({"_id": {"$in": list(gig_ids)}}).to_list(length=len(gig_ids) + 1) if gig_ids else []
+
+        # Await all parallel queries
+        import asyncio
+        results = await asyncio.gather(
+            asyncio.ensure_future(customers_task) if customer_ids else asyncio.sleep(0, []),
+            asyncio.ensure_future(freelancers_task) if freelancer_ids else asyncio.sleep(0, []),
+            asyncio.ensure_future(gigs_task) if gig_ids else asyncio.sleep(0, [])
+        )
+        
+        customers = results[0] if customer_ids else []
+        freelancers = results[1] if freelancer_ids else []
+        gigs = results[2] if gig_ids else []
+
+        # Create lookup maps
+        customer_map = {str(c["_id"]): c.get("name", "Unknown Customer") for c in customers}
+        freelancer_map = {str(f["_id"]): f.get("name", "Unknown Provider") for f in freelancers}
+        gig_map = {str(g["_id"]): g.get("title", "Unknown Gig") for g in gigs}
+
+        serialized_orders = []
+        for o in orders:
+            serialized = dict(o)
+            serialized["_id"] = str(serialized["_id"])
+            serialized.setdefault("reviewed", False)
+
+            cust_id = str(serialized.get("customer_id", ""))
+            serialized["customer_name"] = customer_map.get(cust_id, "Unknown Customer")
+
+            free_id = str(serialized.get("freelancer_id", ""))
+            serialized["freelancer_name"] = freelancer_map.get(free_id, "Unknown Provider")
+
+            g_id = str(serialized.get("gig_id", ""))
+            serialized["gig_title"] = gig_map.get(g_id, "Unknown Gig")
+
+            serialized_orders.append(serialized)
+
+        return serialized_orders
+
     async def customer_has_pending_review(self, customer_id: str) -> bool:
         pending = await self.db.orders.find_one(
             {
@@ -154,24 +204,24 @@ class OrderService:
         # Logic to retrieve all orders for a specific user from the database
         orders = await self.db.orders.find({
             "$or": [
-                {"customer_id": user_id},
-                {"freelancer_id": user_id},
+                {"customer_id": validate_object_id(user_id)},
+                {"freelancer_id": validate_object_id(user_id)},
             ]
         }).to_list(length=100)
         
-        return [await self._serialize_order(order) for order in orders]
+        return await self._serialize_orders_bulk(orders)
 
     async def get_orders_as_freelancer(self, freelancer_id: str):
-        orders = await self.db.orders.find({"freelancer_id": freelancer_id}).to_list(length=100)
-        return [await self._serialize_order(order) for order in orders]
+        orders = await self.db.orders.find({"freelancer_id": validate_object_id(freelancer_id)}).to_list(length=100)
+        return await self._serialize_orders_bulk(orders)
 
     async def get_orders_as_customer(self, customer_id: str):
         orders = (
-            await self.db.orders.find({"customer_id": customer_id})
+            await self.db.orders.find({"customer_id": validate_object_id(customer_id)})
             .sort("created_at", -1)
             .to_list(length=100)
         )
-        return [await self._serialize_order(order) for order in orders]
+        return await self._serialize_orders_bulk(orders)
     
     async def delete_order(self, order_id: str):
         """
@@ -236,6 +286,20 @@ class OrderService:
                 )
         
         # --- Fix #21: timezone-aware datetime ---
+        if update_data.get("status") == "cancelled" and order.get("payment_status") == "held":
+            from Service.PaymentService import PaymentService
+            payment_service = PaymentService()
+            try:
+                await payment_service.refund_payment(order_id)
+                return {"message": "Order cancelled and payment refunded successfully"}
+            except HTTPException as e:
+                raise e
+            except Exception as e:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Status update failed because payment refund failed: {str(e)}",
+                )
+
         if update_data.get("status") == "completed":
             # If transitioning to completed, release the payment first via Stripe
             from Service.PaymentService import PaymentService

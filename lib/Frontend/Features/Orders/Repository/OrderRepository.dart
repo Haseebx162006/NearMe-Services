@@ -194,9 +194,11 @@ class OrderRepository {
       final token = await _secureStorage.getToken();
       if (token == null) throw Exception('Not authenticated');
 
+      final backendStatus = status == 'declined' ? 'cancelled' : status;
+
       final response = await _dio.patch(
         '/orders/$orderId/status',
-        data: {'status': status},
+        data: {'status': backendStatus},
         options: Options(headers: {'Authorization': 'Bearer $token'}),
       );
 

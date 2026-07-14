@@ -144,3 +144,12 @@ async def stripe_connect_refresh():
     """Redirect page when Stripe onboarding link expires"""
     return HTMLResponse(content=_REFRESH_HTML)
 
+
+@router.post("/confirm")
+async def confirm_payment(
+    order_id: str = Body(..., embed=True),
+    current_user: dict = Depends(role_checker(["customer", "freelancer"]))
+):
+    """Confirm Stripe payment for an order and mark as held"""
+    return await controller.confirm_payment(order_id)
+

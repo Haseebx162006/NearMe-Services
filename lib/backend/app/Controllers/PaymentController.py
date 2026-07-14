@@ -20,3 +20,6 @@ class PaymentController:
         
     async def get_onboarding_link(self, freelancer_id: str, refresh_url: str, return_url: str):
         return await self.service.get_onboarding_link(freelancer_id, refresh_url, return_url)
+
+    async def confirm_payment(self, order_id: str):
+        return await self.service.confirm_payment(order_id)

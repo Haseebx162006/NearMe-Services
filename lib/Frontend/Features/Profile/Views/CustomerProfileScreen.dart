@@ -101,20 +101,7 @@ class CustomerProfileScreen extends ConsumerWidget {
                   'Wallet',
                   '\$${user.wallet.toStringAsFixed(2)}',
                 ),
-                _buildProfileOption(
-                  Icons.history_outlined,
-                  'Order History',
-                  'View past bookings',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            const CustomerOrderHistoryScreen(),
-                      ),
-                    );
-                  },
-                ),
+
                 _buildProfileOption(
                   Icons.settings_outlined,
                   'Settings',
